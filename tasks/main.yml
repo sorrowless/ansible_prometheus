@@ -1,0 +1,52 @@
+---
+- name: Pre-install | Merge user data with default
+  set_fact:
+    prometheus: "{{ prometheus_data | combine(prom_config, recursive=True) }}"
+  tags:
+    - always
+
+- name: Show prometheus config
+  debug:
+    var: prometheus
+    verbosity: 1
+
+- name: Include preinstallation tasks
+  import_tasks: preinstall.yml
+  tags:
+    - preinstall
+
+- name: Include timescale DB tasks
+  import_tasks: timescale.yml
+  when: prometheus.prometheus.install_server
+  tags:
+    - timescale
+    - postgres
+
+- name: Include exporters tasks
+  import_tasks: exporters.yml
+  tags:
+    - prometheus
+    - exporters
+
+- name: Include exporters reverse proxy tasks
+  import_tasks: exporters_reverse_proxy.yml
+  when: prometheus.exporters_reverse_proxy.enabled
+  tags:
+    - prometheus
+    - exporters
+    - reverse_proxy
+    - proxy
+
+- name: Include prometheus tasks
+  import_tasks: prometheus.yml
+  when: prometheus.prometheus.install_server
+  tags:
+    - prometheus
+    - prometheus_server
+
+- name: Include alertmanager tasks
+  import_tasks: alertmanager.yml
+  when: prometheus.alertmanager.enabled
+  tags:
+    - prometheus
+    - alertmanager

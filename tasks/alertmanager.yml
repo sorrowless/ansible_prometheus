@@ -1,0 +1,40 @@
+---
+- name: Alertmanager | Ensure config directory
+  file:
+    state: directory
+    path: "{{ prometheus.alertmanager.config_dir }}"
+    mode: 0755
+    owner: root
+    group: root
+
+- name: Alertmanager | Ensure configuration file
+  template:
+    src: alertmanager/alertmanager.yml
+    dest: "{{ prometheus.alertmanager.config_dir }}/"
+    mode: 0755
+    owner: root
+    group: root
+  register: alert_config
+
+- name: Alertmanager | Start docker alertmanager container
+  docker_service:
+    state: present
+    project_name: alertmanager
+    restarted: "{{ 'yes' if alert_config.changed else 'no' }}"
+    definition:
+      version: '2'
+      services:
+        alertmanager:
+          image: "{{ prometheus.alertmanager.docker_image }}"
+          container_name: "{{ prometheus.alertmanager.container_name }}"
+          ports:
+            - "127.0.0.1:9093:9093"
+          volumes:
+            - "{{ prometheus.alertmanager.config_dir }}/:/etc/alertmanager/"
+          hostname: "{{ prometheus.alertmanager.container_name }}"
+          restart: always
+          labels: "{{ prometheus.alertmanager.docker_labels }}"
+      networks:
+        default:
+          external:
+            name: "{{ prometheus.docker.network_name }}"

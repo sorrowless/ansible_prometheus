@@ -1,0 +1,42 @@
+---
+- name: Ensure nginx is installed
+  package:
+    name: nginx
+    state: present
+
+- name: Ensure directories for certs
+  file:
+    path: /etc/ssl_certs/prometheus_exporters
+    state: directory
+
+- name: Generate RSA private key for prometheus exporters
+  openssl_privatekey:
+    path: /etc/ssl_certs/prometheus_exporters/private.pem
+    size: 2048
+    type: RSA
+
+- name: Generate self-signed certificate request for prometheus exporters
+  openssl_csr:
+    path: /etc/ssl_certs/prometheus_exporters/cert.csr
+    privatekey_path: /etc/ssl_certs/prometheus_exporters/private.pem
+    common_name: 'prometheus.client'
+
+- name: Generate self-signed certificate for prometheus exporters
+  openssl_certificate:
+    path: /etc/ssl_certs/prometheus_exporters/fullchain.pem
+    privatekey_path: /etc/ssl_certs/prometheus_exporters/private.pem
+    csr_path: /etc/ssl_certs/prometheus_exporters/cert.csr
+    provider: selfsigned
+
+- name: Ensure nginx config as reverse proxy for exporters
+  template:
+    src: nginx_exporters.conf
+    dest: /etc/nginx/sites-available/prometheus_exporters.conf
+  notify: Restart nginx
+
+- name: Ensure nginx config enabled
+  file:
+    src: /etc/nginx/sites-available/prometheus_exporters.conf
+    dest: /etc/nginx/sites-enabled/prometheus_exporters.conf
+    state: link
+  notify: Restart nginx

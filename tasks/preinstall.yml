@@ -1,0 +1,22 @@
+---
+- name: Common | Install needed packages
+  package:
+    name: "{{ prometheus.packages }}"
+    state: present
+
+- name: Common | Ensure docker daemon enabled
+  systemd:
+    name: docker.service
+    state: started
+    enabled: yes
+
+- name: Common | Configure network ranges for docker hosts
+  docker_network:
+    name: "{{ prometheus.docker.network_name }}"
+    driver_options:
+      # Have to be 15 symbols or less
+      com.docker.network.bridge.name: prom_bridge
+    ipam_options:
+      subnet: '{{ prometheus.docker.network_subnet }}'
+      gateway: '{{ prometheus.docker.network_gateway }}'
+      iprange: '{{ prometheus.docker.network_iprange }}'

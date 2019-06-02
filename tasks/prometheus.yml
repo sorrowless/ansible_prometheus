@@ -1,0 +1,40 @@
+---
+- name: Prometheus | Ensure config directory
+  file:
+    state: directory
+    path: "{{ prometheus.prometheus.config_dir }}"
+    mode: 0755
+    owner: root
+    group: root
+
+- name: Prometheus | Ensure configuration file
+  template:
+    src: prometheus/prometheus.yml
+    dest: "{{ prometheus.prometheus.config_dir }}/"
+    mode: 0755
+    owner: root
+    group: root
+  register: prom_config
+
+- name: Prometheus | Start docker prometheus container
+  docker_service:
+    state: present
+    project_name: prometheus
+    restarted: "{{ 'yes' if prom_config.changed else 'no' }}"
+    definition:
+      version: '2'
+      services:
+        prometheus:
+          image: "{{ prometheus.prometheus.docker_image }}"
+          container_name: "{{ prometheus.prometheus.container_name }}"
+          ports:
+            - "127.0.0.1:9090:9090"
+          volumes:
+            - "{{ prometheus.prometheus.config_dir }}/:/etc/prometheus/"
+          hostname: "{{ prometheus.prometheus.container_name }}"
+          restart: always
+          labels: "{{ prometheus.prometheus.docker_labels }}"
+      networks:
+        default:
+          external:
+            name: "{{ prometheus.docker.network_name }}"

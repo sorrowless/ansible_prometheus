@@ -1,0 +1,108 @@
+---
+prom_config: {}
+prometheus_data:
+  packages:
+    - docker.io
+    - python-docker
+    - docker-compose
+  docker:
+    network_name: prometheus_network
+    network_subnet: 10.10.10.0/24
+    network_gateway: 10.10.10.1
+    network_iprange: 10.10.10.128/25
+  timescale:
+    container_name: pg_prometheus
+    docker_image: "timescale/pg_prometheus:0.2.1"
+    storage_dir: /var/lib/timescale/postgresql/data
+    docker_labels:
+      - postgres
+      - timescale
+    postgres_password: postgres
+  pg_adapter:
+    container_name: prometheus_postgresql_adapter
+    docker_image: "timescale/prometheus-postgresql-adapter:0.4.1"
+    docker_labels:
+      - postgres
+      - pg_adapter
+      - timescale
+  exporters_reverse_proxy:
+    enabled: false
+    port: 19100
+  exporters:
+    node_exporter:
+      enabled: false
+      container_name: node_exporter
+      docker_image: "quay.io/prometheus/node-exporter"
+      host_port: 9100
+      metrics_path: metrics
+      docker_labels:
+        - prometheus
+        - exporter
+        - node_exporter
+  prometheus:
+    install_server: false
+    container_name: prometheus_server
+    docker_image: "prom/prometheus"
+    docker_labels:
+      - prometheus
+      - prometheus_server
+    config_dir: /var/lib/prometheus/config
+    # Real prometheus config
+    config:
+      global:
+       scrape_interval:     5s
+       evaluation_interval: 5s
+      scrape_configs:
+       - job_name: prometheus
+         static_configs:
+           - targets: ['node_exporter:9100']
+             #- job_name: rusty.host
+             #  scheme: https
+             #  tls_config:
+             #    ca_file: cacert.pem
+             #    key_file: key.pem
+             #    cert_file: cert.pem
+             #    insecure_skip_verify: false
+             #  static_configs:
+             #    - targets: ['104.40.216.127:443']
+      remote_write:
+       - url: "http://prometheus_postgresql_adapter:9201/write"
+      remote_read:
+       - url: "http://prometheus_postgresql_adapter:9201/read"
+      alertmanager_config:
+        timeout: 10s
+        path_prefix: /
+        scheme: http
+        static_configs:
+          - targets: ['alertmanager:9093']
+  alertmanager:
+    enabled: false
+    container_name: alertmanager
+    docker_image: "prom/alertmanager:v0.17.0"
+    docker_labels:
+      - prometheus
+      - alertmanager
+    config_dir: /var/lib/alertmanager/config
+    config:
+      global:
+        resolve_timeout: 5m
+      templates:
+        - '/etc/alertmanager/template/*.tmpl'
+      route:
+        group_by: ['alertname']
+        group_wait: 30s
+        group_interval: 3m
+        repeat_interval: 30m
+        # Default receiver
+        receiver: Telegram-personal
+      inhibit_rules:
+        - source_match:
+            severity: 'critical'
+          target_match:
+            severity: 'warning'
+          equal: ['alertname']
+      receivers:
+        - name: Telegram-personal
+          webhook_configs:
+            - send_resolved: true
+              url: 'http://alertmanager-telegram-bot:8080'
