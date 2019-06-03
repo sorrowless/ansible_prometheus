@@ -69,12 +69,13 @@ prometheus_data:
        - url: "http://prometheus_postgresql_adapter:9201/write"
       remote_read:
        - url: "http://prometheus_postgresql_adapter:9201/read"
-      alertmanager_config:
-        timeout: 10s
-        path_prefix: /
-        scheme: http
-        static_configs:
-          - targets: ['alertmanager:9093']
+      alerting:
+        alertmanagers:
+          - timeout: 10s
+            path_prefix: /
+            scheme: http
+            static_configs:
+              - targets: ['alertmanager:9093']
   alertmanager:
     enabled: false
     container_name: alertmanager
