@@ -46,7 +46,7 @@ prometheus_data:
     docker_labels:
       - prometheus
       - prometheus_server
-    config_dir: /var/lib/prometheus/config
+    config_dir: /var/lib/prometheus/
     # Real prometheus config
     config:
       global:
@@ -54,8 +54,12 @@ prometheus_data:
        evaluation_interval: 5s
       scrape_configs:
        - job_name: prometheus
+         honor_labels: false
          static_configs:
            - targets: ['node_exporter:9100']
+             labels:
+               scrape_type: node_exporter
+               node_name: prometheus
              #- job_name: rusty.host
              #  scheme: https
              #  tls_config:
@@ -76,6 +80,8 @@ prometheus_data:
             scheme: http
             static_configs:
               - targets: ['alertmanager:9093']
+      rule_files:
+        - 'templates/*.yml'
   alertmanager:
     enabled: false
     container_name: alertmanager
@@ -83,7 +89,7 @@ prometheus_data:
     docker_labels:
       - prometheus
       - alertmanager
-    config_dir: /var/lib/alertmanager/config
+    config_dir: /var/lib/alertmanager/
     config:
       global:
         resolve_timeout: 5m
@@ -92,8 +98,8 @@ prometheus_data:
       route:
         group_by: ['alertname']
         group_wait: 30s
-        group_interval: 3m
-        repeat_interval: 30m
+        group_interval: 1m
+        repeat_interval: 1m
         # Default receiver
         receiver: Telegram-personal
       inhibit_rules:
@@ -106,4 +112,16 @@ prometheus_data:
         - name: Telegram-personal
           webhook_configs:
             - send_resolved: true
-              url: 'http://alertmanager-telegram-bot:8080'
+              url: 'http://alertsbot:8080'
+    telegram_bot:
+      enabled: false
+      config_dir: /var/lib/alertmanager_bot
+      docker_image: "metalmatze/alertmanager-bot:0.4.0"
+      container_name: alertsbot
+      docker_labels:
+        - prometheus
+        - alertmanager
+        - telegram-bot
+        - alertmanager-bot
+      telegram_admin: username
+      telegram_token: token

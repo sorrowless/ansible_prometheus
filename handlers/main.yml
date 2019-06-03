@@ -3,3 +3,13 @@
   service:
     name: nginx
     state: restarted
+
+- name: Restart docker prometheus container
+  docker_container:
+    name: "{{ prometheus.prometheus.container_name }}"
+    restart: yes
+
+- name: Restart alertmanager bot container
+  docker_container:
+    name: "{{ prometheus.alertmanager.telegram_bot.container_name }}"
+    restart: yes

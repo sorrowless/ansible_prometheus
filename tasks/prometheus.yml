@@ -2,7 +2,8 @@
 - name: Prometheus | Ensure config directory
   file:
     state: directory
-    path: "{{ prometheus.prometheus.config_dir }}"
+    # TODO(sbog): think how to define this dynamically
+    path: "{{ prometheus.prometheus.config_dir }}/templates"
     mode: 0755
     owner: root
     group: root
@@ -15,6 +16,20 @@
     owner: root
     group: root
   register: prom_config
+
+- name: Prometheus | Ensure templates files
+  copy:
+    src: "{{ item }}"
+    dest: "{{ prometheus.prometheus.config_dir }}/templates/{{ item | basename }}"
+    mode: 0755
+    owner: root
+    group: root
+  # Fileglob always operates started from 'files' dir, so move to 'templates'
+  # explicitly
+  with_fileglob:
+    - prometheus/templates/*.yml
+  notify:
+    - Restart docker prometheus container
 
 - name: Prometheus | Start docker prometheus container
   docker_service:

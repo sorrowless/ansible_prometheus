@@ -1,0 +1,13 @@
+---
+groups:
+- name: node.rules
+  rules:
+  - alert: InstanceDown
+    expr: up{scrape_type="node_exporter"} == 0
+    for: 10s
+    labels:
+      severity: critical
+    annotations:
+      summary: "Instance is down"
+      summary_resolved: "Instance is up"
+      description: "Returned value is {{ .Value }}"
