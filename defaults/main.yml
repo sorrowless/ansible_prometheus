@@ -11,20 +11,31 @@ prometheus_data:
     network_gateway: 10.10.10.1
     network_iprange: 10.10.10.128/25
   timescale:
+    enabled: false
     container_name: pg_prometheus
     docker_image: "timescale/pg_prometheus:0.2.1"
     storage_dir: /var/lib/timescale/postgresql/data
     docker_labels:
       - postgres
       - timescale
+      - storage
     postgres_password: postgres
-  pg_adapter:
+  pg_adapter:  # Enabled automatically with timescale
     container_name: prometheus_postgresql_adapter
     docker_image: "timescale/prometheus-postgresql-adapter:0.4.1"
     docker_labels:
       - postgres
       - pg_adapter
       - timescale
+      - storage
+  victoriametrics:
+    enabled: false
+    container_name: victoriametrics
+    docker_image: "victoriametrics/victoria-metrics:v1.19.4"
+    storage_dir: /var/lib/victoriametrics/data
+    docker_labels:
+      - victoriametrics
+      - storage
   exporters_reverse_proxy:
     enabled: false
     port: 19100
@@ -70,9 +81,12 @@ prometheus_data:
              #  static_configs:
              #    - targets: ['104.40.216.127:443']
       remote_write:
-       - url: "http://prometheus_postgresql_adapter:9201/write"
-      remote_read:
-       - url: "http://prometheus_postgresql_adapter:9201/read"
+       - url: "http://victoriametrics:8428/api/v1/write"
+         queue_config:
+           max_samples_per_send: 10000
+         #- url: "http://prometheus_postgresql_adapter:9201/write"
+      remote_read: []
+         #- url: "http://prometheus_postgresql_adapter:9201/read"
       alerting:
         alertmanagers:
           - timeout: 10s

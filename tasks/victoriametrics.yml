@@ -1,0 +1,28 @@
+---
+- name: VictoriaMetrics | Create needed directories for VictoriaMetrics data
+  file:
+    dest: "{{ prometheus.victoriametrics.storage_dir }}"
+    state: directory
+    mode: 0755
+
+- name: VictoriaMetrics | Start docker VictoriaMetrics container
+  docker_service:
+    state: present
+    project_name: victoriametrics
+    definition:
+      version: '2'
+      services:
+        victoriametrics:
+          image: "{{ prometheus.victoriametrics.docker_image }}"
+          container_name: "{{ prometheus.victoriametrics.container_name }}"
+          ports:
+            - "127.0.0.1:8428:8428"
+          volumes:
+            - "{{ prometheus.victoriametrics.storage_dir }}:/victoria-metrics-data"
+          hostname: "{{ prometheus.victoriametrics.container_name }}"
+          restart: always
+          labels: "{{ prometheus.victoriametrics.docker_labels }}"
+      networks:
+        default:
+          external:
+            name: "{{ prometheus.docker.network_name }}"

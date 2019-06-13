@@ -17,10 +17,18 @@
 
 - name: Include timescale DB tasks
   import_tasks: timescale.yml
-  when: prometheus.prometheus.install_server
+  when: prometheus.prometheus.install_server and prometheus.timescale.enabled
   tags:
     - timescale
     - postgres
+    - storage
+
+- name: Include victoriametrics DB tasks
+  import_tasks: victoriametrics.yml
+  when: prometheus.prometheus.install_server and prometheus.victoriametrics.enabled
+  tags:
+    - victoriametrics
+    - storage
 
 - name: Include exporters tasks
   import_tasks: exporters.yml
