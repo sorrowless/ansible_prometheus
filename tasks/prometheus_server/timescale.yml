@@ -29,6 +29,30 @@
         default:
           external:
             name: "{{ prometheus.docker.network_name }}"
+  when: prometheus.docker.network_name != "host"
+
+- name: Timescale | Start docker Timescale container
+  docker_service:
+    state: present
+    project_name: pg_prometheus
+    definition:
+      version: '2'
+      services:
+        timescaledb:
+          image: "{{ prometheus.timescale.docker_image }}"
+          container_name: "{{ prometheus.timescale.container_name }}"
+          ports:
+            - "127.0.0.1:5432:5432"
+          volumes:
+            - "{{ prometheus.timescale.storage_dir }}:/var/lib/postgresql/data"
+          environment:
+            - POSTGRES_PASSWORD={{ prometheus.timescale.postgres_password }}
+          command: "postgres -csynchronous_commit=off"
+          hostname: "{{ prometheus.timescale.container_name }}"
+          restart: always
+          labels: "{{ prometheus.timescale.docker_labels }}"
+          network_mode: host
+  when: prometheus.docker.network_name == "host"
 
 - name: Timescale | Start docker postgres adapter container
   docker_service:
@@ -50,3 +74,23 @@
         default:
           external:
             name: "{{ prometheus.docker.network_name }}"
+  when: prometheus.docker.network_name != "host"
+
+- name: Timescale | Start docker postgres adapter container
+  docker_service:
+    state: present
+    project_name: prometheus_postgresql_adapter
+    definition:
+      version: '2'
+      services:
+        pg_adapter:
+          image: "{{ prometheus.pg_adapter.docker_image }}"
+          container_name: "{{ prometheus.pg_adapter.container_name }}"
+          ports:
+            - "127.0.0.1:9201:9201"
+          command: "-pg.host={{ prometheus.timescale.container_name }} -pg.prometheus-log-samples -pg.password={{ prometheus.timescale.postgres_password }}"
+          hostname: "{{ prometheus.pg_adapter.container_name }}"
+          restart: always
+          labels: "{{ prometheus.pg_adapter.docker_labels }}"
+          network_mode: host
+  when: prometheus.docker.network_name == "host"

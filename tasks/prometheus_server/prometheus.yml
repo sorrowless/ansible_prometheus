@@ -8,6 +8,12 @@
     owner: root
     group: root
 
+- name: Set variable with scrape configs
+  set_fact:
+    scrape_configs: "{{ scrape_configs | default([]) + [hostvars[item].job_config] }}"
+  with_items: "{{ ansible_play_hosts_all }}"
+  when: hostvars[item].job_config is defined
+
 - name: Prometheus | Ensure configuration file
   template:
     src: prometheus/prometheus.yml
@@ -16,6 +22,9 @@
     owner: root
     group: root
   register: prom_config
+  tags:
+    - server_config
+    - prometheus_config
 
 - name: Prometheus | Ensure templates files
   copy:
@@ -53,3 +62,26 @@
         default:
           external:
             name: "{{ prometheus.docker.network_name }}"
+  when: prometheus.docker.network_name != "host"
+
+- name: Prometheus | Start docker prometheus container
+  docker_service:
+    state: present
+    project_name: prometheus
+    restarted: "{{ 'yes' if prom_config.changed else 'no' }}"
+    definition:
+      version: '2'
+      services:
+        prometheus:
+          image: "{{ prometheus.prometheus.docker_image }}"
+          container_name: "{{ prometheus.prometheus.container_name }}"
+          ports:
+            - "127.0.0.1:9090:9090"
+          volumes:
+            - "{{ prometheus.prometheus.config_dir }}/:/etc/prometheus/"
+          hostname: "{{ prometheus.prometheus.container_name }}"
+          restart: always
+          labels: "{{ prometheus.prometheus.docker_labels }}"
+          network_mode: host
+  when: prometheus.docker.network_name == "host"
+  failed_when: false

@@ -38,6 +38,28 @@
         default:
           external:
             name: "{{ prometheus.docker.network_name }}"
+  when: prometheus.docker.network_name != "host"
+
+- name: Alertmanager | Start docker alertmanager container
+  docker_service:
+    state: present
+    project_name: alertmanager
+    restarted: "{{ 'yes' if alert_config.changed else 'no' }}"
+    definition:
+      version: '2'
+      services:
+        alertmanager:
+          image: "{{ prometheus.alertmanager.docker_image }}"
+          container_name: "{{ prometheus.alertmanager.container_name }}"
+          ports:
+            - "127.0.0.1:9093:9093"
+          volumes:
+            - "{{ prometheus.alertmanager.config_dir }}/:/etc/alertmanager/"
+          hostname: "{{ prometheus.alertmanager.container_name }}"
+          restart: always
+          labels: "{{ prometheus.alertmanager.docker_labels }}"
+          network_mode: host
+  when: prometheus.docker.network_name == "host"
 
 - name: Alertmanager | Include alertmanager-bot tasks
   import_tasks: alertmanager_bot.yml

@@ -1,1 +1,1 @@
-{{ prometheus.alertmanager.config }}
+{{ prometheus.alertmanager.config|to_nice_json }}

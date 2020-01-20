@@ -1,0 +1,61 @@
+---
+- name: Install autossh package
+  package:
+    name: autossh
+    state: present
+
+- name: Exporters | Increase server port
+  set_fact:
+    autossh_port_number: "{{ autossh_port_number|int + 1 }}"
+  tags:
+    - server_config
+    - prometheus_config
+
+- name: Add autossh connection to the prometheus host
+  template:
+    src: autossh.service
+    dest: "/etc/systemd/system/autossh-{{ service_name }}.service"
+    owner: root
+    group: root
+    mode: 0644
+  register: autossh_service
+
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: yes
+  when: autossh_service.changed
+
+- name: Enable autossh service in systemd
+  systemd:
+    name: "autossh-{{ service_name }}.service"
+    enabled: yes
+
+- name: Restart autossh service in systemd
+  systemd:
+    name: "autossh-{{ service_name }}.service"
+    state: restarted
+  when: autossh_service.changed
+
+- name: Ensure autossh service is started
+  systemd:
+    name: "autossh-{{ service_name }}.service"
+    state: started
+
+- name: Create scrape config var for exporter
+  set_fact:
+    exporter_config:
+        targets: ["127.0.0.1:{{ autossh_port_number }}"]
+        labels: {
+          "scrape_type": "{{ service_name }}",
+          "node_name": "{{ ansible_host }}"
+          }
+  tags:
+    - server_config
+    - prometheus_config
+
+- name: Add target to prometheus scrape static configs
+  set_fact:
+    static_configs: "{{ static_configs + [ exporter_config ] }}"
+  tags:
+    - server_config
+    - prometheus_config

@@ -1,1 +1,6 @@
-{{ prometheus.prometheus.config }}
+global: {{ prometheus.prometheus.config.global | to_nice_json }}
+scrape_configs: {{ scrape_configs | to_nice_json }}
+remote_write: {{ prometheus.prometheus.config.remote_write | to_nice_json }}
+remote_read: {{ prometheus.prometheus.config.remote_read | to_nice_json }}
+alerting: {{ prometheus.prometheus.config.alerting | to_nice_json }}
+rule_files: {{ prometheus.prometheus.config.rule_files | to_nice_json }}

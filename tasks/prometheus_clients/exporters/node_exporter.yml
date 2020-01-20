@@ -1,0 +1,55 @@
+---
+- name: Exporters | Start docker node exporter container
+  docker_service:
+    state: present
+    project_name: prometheus_node_exporter
+    definition:
+      version: '2'
+      services:
+        node_exporter:
+          image: "{{ prometheus_client.exporters.node_exporter.docker_image }}"
+          container_name: "{{ prometheus_client.exporters.node_exporter.container_name }}"
+          ports:
+            - "127.0.0.1:{{ prometheus_client.exporters.node_exporter.host_port }}:9100"
+          hostname: "{{ ansible_host }}"
+          restart: always
+          labels: "{{ prometheus_client.exporters.node_exporter.docker_labels }}"
+      networks:
+        default:
+          external:
+            name: "{{ prometheus.docker.network_name }}"
+  when: prometheus.docker.network_name != "host"
+
+- name: Exporters | Start docker node exporter container
+  docker_service:
+    state: present
+    project_name: prometheus_node_exporter
+    definition:
+      version: '2'
+      services:
+        node_exporter:
+          image: "{{ prometheus_client.exporters.node_exporter.docker_image }}"
+          container_name: "{{ prometheus_client.exporters.node_exporter.container_name }}"
+          ports:
+            - "127.0.0.1:{{ prometheus_client.exporters.node_exporter.host_port }}:9100"
+          hostname: "{{ ansible_host }}"
+          restart: always
+          labels: "{{ prometheus_client.exporters.node_exporter.docker_labels }}"
+          network_mode: host
+  when: prometheus.docker.network_name == "host"
+
+- name: Add autossh connection to the prometheus host
+  import_tasks: _autossh.yml
+  vars:
+    service_name: "node_exporter"
+    exporter_name: "Node Exporter"
+    local_port: "{{ prometheus_client.exporters.node_exporter.host_port }}"
+    connect_username: prometheus_client
+    connect_port: "{{ prometheus_client.exporters_autossh_to_prometheus.master_ssh_port }}"
+  when: prometheus_client.exporters_autossh_to_prometheus.enabled
+  tags:
+    - autossh
+    - prometheus_clients
+    - exporters
+    - server_config
+    - prometheus_config

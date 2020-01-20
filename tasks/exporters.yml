@@ -1,4 +1,0 @@
----
-- name: Exporters | Include node exporter
-  import_tasks: exporters/node_exporter.yml
-  when: prometheus.exporters.node_exporter.enabled

@@ -4,6 +4,13 @@
     name: "{{ prometheus.packages }}"
     state: present
 
+- name: Common | Ensure pip packages
+  pip:
+    name:
+      - docker
+      - docker-compose
+    state: present
+
 - name: Common | Ensure docker daemon enabled
   systemd:
     name: docker.service
@@ -20,3 +27,4 @@
       subnet: '{{ prometheus.docker.network_subnet }}'
       gateway: '{{ prometheus.docker.network_gateway }}'
       iprange: '{{ prometheus.docker.network_iprange }}'
+  when: prometheus.docker.network_name != 'host'

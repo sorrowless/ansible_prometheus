@@ -49,3 +49,34 @@
         default:
           external:
             name: "{{ prometheus.docker.network_name }}"
+  when: prometheus.docker.network_name != "host"
+
+- name: Alertmanager-bot | Start docker alertmanager-bot container
+  docker_service:
+    state: present
+    project_name: alertmanager_bot
+    definition:
+      version: '2'
+      services:
+        alertmanager_bot:
+          image: "{{ prometheus.alertmanager.telegram_bot.docker_image }}"
+          container_name: "{{ prometheus.alertmanager.telegram_bot.container_name }}"
+          volumes:
+            - "{{ prometheus.alertmanager.telegram_bot.config_dir }}/data/:/data"
+            - "{{ prometheus.alertmanager.telegram_bot.config_dir }}/templates/default.tmpl:/templates/default.tmpl"
+          ports:
+            - "127.0.0.1:8080:8080"
+          hostname: "{{ prometheus.alertmanager.telegram_bot.container_name }}"
+          restart: always
+          labels: "{{ prometheus.alertmanager.telegram_bot.docker_labels }}"
+          environment:
+            #ALERTMANAGER_URL: http://{{ prometheus.alertmanager.container_name }}:9093
+            ALERTMANAGER_URL: http://127.0.0.1:9093
+            BOLT_PATH: /data/bot.db
+            STORE: bolt
+            TELEGRAM_ADMIN: '{{ prometheus.alertmanager.telegram_bot.telegram_admin }}'
+            TELEGRAM_TOKEN: '{{ prometheus.alertmanager.telegram_bot.telegram_token }}'
+            TEMPLATE_PATHS: /templates/default.tmpl
+            LISTEN_ADDR: '0.0.0.0:8080'
+          network_mode: host
+  when: prometheus.docker.network_name == "host"

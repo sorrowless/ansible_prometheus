@@ -30,7 +30,7 @@
 
 - name: Ensure nginx config as reverse proxy for exporters
   template:
-    src: nginx_exporters.conf
+    src: nginx_exporter.conf
     dest: /etc/nginx/sites-available/prometheus_exporters.conf
   notify: Restart nginx
 

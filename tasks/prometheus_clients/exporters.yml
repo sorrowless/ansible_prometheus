@@ -1,0 +1,38 @@
+---
+- name: Exporters | Initialize host scrape config
+  set_fact:
+    static_configs: []
+  tags:
+    - always
+
+- name: Exporters | Find first prometheus master address
+  set_fact:
+    first_prometheus_master: "{{ hostvars[item].ansible_host }}"
+  with_items: "{{ ansible_play_hosts_all }}"
+  when: hostvars[item].prometheus_server_config is defined and hostvars[item].prometheus_server_config.prometheus is defined and hostvars[item].prometheus_server_config.prometheus.install_server
+
+- name: Exporters | Include node exporter
+  import_tasks: exporters/node_exporter.yml
+  when: prometheus_client.exporters.node_exporter.enabled
+  tags:
+    - server_config
+    - node_exporter
+    - prometheus_config
+
+- name: Exporters | Include grok exporter
+  import_tasks: exporters/grok_exporter.yml
+  when: prometheus_client.exporters.grok_exporter.enabled
+  tags:
+    - grok_exporter
+    - server_config
+    - prometheus_config
+
+- name: Exporters | Initialize host job config
+  set_fact:
+    job_config:
+      job_name: "{{ ansible_host }}"
+      honor_labels: false
+      static_configs: "{{ static_configs }}"
+  tags:
+    - server_config
+    - prometheus_config

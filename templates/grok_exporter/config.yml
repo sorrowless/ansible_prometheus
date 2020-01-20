@@ -1,0 +1,10 @@
+{% for entry in item.config %}
+{% if entry == "global" %}
+global:
+  config_version: {{ item.config[entry].config_version }}
+  retention_check_interval: {{ item.config[entry].retention_check_interval }}
+{% else %}
+{{ entry }}: {{ item.config[entry]|to_nice_json }}
+{% endif %}
+{% endfor %}
+

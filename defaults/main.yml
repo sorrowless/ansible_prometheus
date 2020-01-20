@@ -1,10 +1,11 @@
 ---
-prom_config: {}
-prometheus_data:
+prometheus_server_config: {}  # this is a map which should be defined by user
+prometheus_clients_config: {}  # this is a map which should be defined by user
+prometheus_server_data:
   packages:
     - docker.io
-    - python-docker
     - docker-compose
+    - python3-pip
   docker:
     network_name: prometheus_network
     network_subnet: 10.10.10.0/24
@@ -36,20 +37,6 @@ prometheus_data:
     docker_labels:
       - victoriametrics
       - storage
-  exporters_reverse_proxy:
-    enabled: false
-    port: 19100
-  exporters:
-    node_exporter:
-      enabled: false
-      container_name: node_exporter
-      docker_image: "quay.io/prometheus/node-exporter"
-      host_port: 9100
-      metrics_path: metrics
-      docker_labels:
-        - prometheus
-        - exporter
-        - node_exporter
   prometheus:
     install_server: false
     container_name: prometheus_server
@@ -63,25 +50,9 @@ prometheus_data:
       global:
        scrape_interval:     5s
        evaluation_interval: 5s
-      scrape_configs:
-       - job_name: prometheus
-         honor_labels: false
-         static_configs:
-           - targets: ['node_exporter:9100']
-             labels:
-               scrape_type: node_exporter
-               node_name: prometheus
-             #- job_name: rusty.host
-             #  scheme: https
-             #  tls_config:
-             #    ca_file: cacert.pem
-             #    key_file: key.pem
-             #    cert_file: cert.pem
-             #    insecure_skip_verify: false
-             #  static_configs:
-             #    - targets: ['104.40.216.127:443']
       remote_write:
-       - url: "http://victoriametrics:8428/api/v1/write"
+        #- url: "http://victoriametrics:8428/api/v1/write"
+       - url: "http://127.0.0.1:8428/api/v1/write"
          queue_config:
            max_samples_per_send: 10000
          #- url: "http://prometheus_postgresql_adapter:9201/write"
@@ -93,7 +64,8 @@ prometheus_data:
             path_prefix: /
             scheme: http
             static_configs:
-              - targets: ['alertmanager:9093']
+              #- targets: ['alertmanager:9093']
+              - targets: ['127.0.0.1:9093']
       rule_files:
         - 'templates/*.yml'
   alertmanager:
@@ -126,11 +98,12 @@ prometheus_data:
         - name: Telegram-personal
           webhook_configs:
             - send_resolved: true
-              url: 'http://alertsbot:8080'
+              #url: 'http://alertsbot:8080'
+              url: 'http://127.0.0.1:8080'
     telegram_bot:
       enabled: false
       config_dir: /var/lib/alertmanager_bot
-      docker_image: "metalmatze/alertmanager-bot:0.4.0"
+      docker_image: "metalmatze/alertmanager-bot:0.4.2"
       container_name: alertsbot
       docker_labels:
         - prometheus
@@ -139,3 +112,55 @@ prometheus_data:
         - alertmanager-bot
       telegram_admin: username
       telegram_token: token
+prometheus_clients_data:
+  exporters_reverse_proxy:
+    enabled: false  # If enable, nginx will be installed to host
+    port: 19100
+  exporters_autossh_to_prometheus:
+    enabled: false  # If enable, autossh will be installed and configured
+    initial_port: 20000
+    multiplier: 30
+    master_ssh_port: 22
+  exporters:
+    node_exporter:
+      enabled: false
+      container_name: node_exporter
+      docker_image: "quay.io/prometheus/node-exporter"
+      host_port: 9100  # Used for reverse proxy also
+      metrics_path: metrics
+      docker_labels:
+        - prometheus
+        - exporter
+        - node_exporter
+    grok_exporter:
+      enabled: false
+      version: '0.2.7'
+      arch: linux-amd64
+      config_dir: /var/lib/grok_exporter
+      patterns_dir: /var/lib/grok_exporter/patterns
+      create_user: true
+      username: grokexporter
+      exporters:
+        - name: nginx_access
+          # For config example look at https://github.com/fstab/grok_exporter/blob/master/example/config.yml
+          config:
+            global:
+              config_version: 2
+              retention_check_interval: 53s
+            input:
+              type: file
+              path: /var/log/nginx/access.log
+              readall: false
+            grok:
+              patterns_dir: /var/lib/grok_exporter/patterns
+              additional_patterns: []
+            metrics:
+              - type: counter
+                name: nginx_access_5xx
+                help: Total number of 5xx errors in according access log
+                match: '%{NGINX_ACCESS}'
+                labels:
+                  error_type: '5xx'
+            server:
+              host: localhost
+              port: 9144

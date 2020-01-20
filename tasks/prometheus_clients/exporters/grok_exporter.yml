@@ -1,0 +1,105 @@
+# vim: set ft=ansible:
+---
+- name: Exporters | Grok exporter | Ensure config dir
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+    owner: root
+    group: root
+  with_items:
+    - "{{ prometheus_client.exporters.grok_exporter.config_dir }}"
+    - "{{ prometheus_client.exporters.grok_exporter.config_dir }}/sources"
+    - "{{ prometheus_client.exporters.grok_exporter.patterns_dir }}"
+
+- name: Exporters | Grok exporter | Get grok distribution
+  get_url:
+    url: "https://github.com/fstab/grok_exporter/releases/download/v{{ prometheus_client.exporters.grok_exporter.version }}/grok_exporter-{{ prometheus_client.exporters.grok_exporter.version }}.{{ prometheus_client.exporters.grok_exporter.arch }}.zip"
+    dest: "{{ prometheus_client.exporters.grok_exporter.config_dir }}/sources/grok_exporter-{{ prometheus_client.exporters.grok_exporter.version }}.{{ prometheus_client.exporters.grok_exporter.arch }}.zip"
+    mode: 0644
+    owner: root
+    group: root
+
+- name: Exporters | Grok exporter | Unzip grok exporter
+  unarchive:
+    remote_src: yes
+    src: "{{ prometheus_client.exporters.grok_exporter.config_dir }}/sources/grok_exporter-{{ prometheus_client.exporters.grok_exporter.version }}.{{ prometheus_client.exporters.grok_exporter.arch }}.zip"
+    #dest: "{{ prometheus_client.exporters.grok_exporter.config_dir }}/sources/grok_exporter-{{ prometheus_client.exporters.grok_exporter.version }}.{{ prometheus_client.exporters.grok_exporter.arch }}"
+    dest: "{{ prometheus_client.exporters.grok_exporter.config_dir }}/sources/"
+    creates: "{{ prometheus_client.exporters.grok_exporter.config_dir }}/sources/grok_exporter-{{ prometheus_client.exporters.grok_exporter.version }}.{{ prometheus_client.exporters.grok_exporter.arch }}/grok_exporter"
+
+- name: Exporters | Grok exporter | Copy exporter to PATH
+  copy:
+    remote_src: yes
+    src: "{{ prometheus_client.exporters.grok_exporter.config_dir }}/sources/grok_exporter-{{ prometheus_client.exporters.grok_exporter.version }}.{{ prometheus_client.exporters.grok_exporter.arch }}/grok_exporter"
+    dest: /usr/local/bin/grok_exporter
+    mode: 0755
+    owner: root
+    group: root
+
+- name: Exporters | Grok exporter | Copy default patterns to conf dir
+  copy:
+    remote_src: yes
+    src: "{{ prometheus_client.exporters.grok_exporter.config_dir }}/sources/grok_exporter-{{ prometheus_client.exporters.grok_exporter.version }}.{{ prometheus_client.exporters.grok_exporter.arch }}/patterns/"
+    dest: "{{ prometheus_client.exporters.grok_exporter.patterns_dir }}/"
+    mode: 0755
+    owner: root
+    group: root
+
+- name: Exporters | Grok exporter | Copy non-default patterns to conf dir
+  copy:
+    remote_src: no
+    src: "grok_exporter/patterns/"
+    dest: "{{ prometheus_client.exporters.grok_exporter.patterns_dir }}/"
+    mode: 0755
+    owner: root
+    group: root
+
+- name: Exporters | Grok exporter | Create grok exporter user
+  user:
+    name: "{{ prometheus_client.exporters.grok_exporter.username }}"
+    comment: "Grok exporter user"
+    shell: /usr/sbin/nologin
+  when: prometheus_client.exporters.grok_exporter.create_user
+
+- name: Exporters | Grok exporter | Ensure grok exporter configuration
+  template:
+    src: grok_exporter/config.yml
+    dest: "{{ prometheus_client.exporters.grok_exporter.config_dir }}/{{ item.name }}.yml"
+    owner: root
+    group: root
+    mode: 0755
+  with_items: "{{ prometheus_client.exporters.grok_exporter.exporters }}"
+
+- name: Exporters | Grok exporter | Ensure grok exporter systemd unit
+  template:
+    src: grok_exporter/systemd.service
+    dest: "/etc/systemd/system/grok-exporter-{{ item.name }}.service"
+    owner: root
+    group: root
+    mode: 0755
+  with_items: "{{ prometheus_client.exporters.grok_exporter.exporters }}"
+
+# TODO(sbog): rework this to restart only changed services
+- name: Exporters | Grok exporter | Enable systemd service
+  systemd:
+    name: "grok-exporter-{{ item.name }}"
+    enabled: yes
+    daemon_reload: yes
+    state: restarted
+  with_items: "{{ prometheus_client.exporters.grok_exporter.exporters }}"
+
+- name: Add autossh connection to the prometheus host
+  include_tasks: _autossh.yml
+  vars:
+    service_name: "grok_exporter_{{ item.name }}"
+    exporter_name: "Grok Exporter for {{ item.name }}"
+    local_port: "{{ item.config.server.port }}"
+    connect_username: prometheus_client
+    connect_port: "{{ prometheus_client.exporters_autossh_to_prometheus.master_ssh_port }}"
+  with_items: "{{ prometheus_client.exporters.grok_exporter.exporters }}"
+  when: prometheus_client.exporters_autossh_to_prometheus.enabled
+  tags:
+    - autossh
+    - prometheus_clients
+    - exporters

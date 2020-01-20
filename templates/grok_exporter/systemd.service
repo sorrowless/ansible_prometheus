@@ -1,0 +1,16 @@
+[Unit]
+Description=Grok {{ item.name }} service
+After=network.target
+
+[Service]
+User={{ prometheus_client.exporters.grok_exporter.username }}
+Group={{ prometheus_client.exporters.grok_exporter.username }}
+PermissionsStartOnly=true
+ExecStart=/usr/local/bin/grok_exporter -config {{ prometheus_client.exporters.grok_exporter.config_dir }}/{{ item.name }}.yml
+ExecStop=/bin/kill -s TERM $MAINPID
+PrivateTmp=true
+Restart=on-failure
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=multi-user.target
