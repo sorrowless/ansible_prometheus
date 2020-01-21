@@ -164,3 +164,15 @@ prometheus_clients_data:
             server:
               host: localhost
               port: 9144
+    postgres_exporter:
+      enabled: false
+      container_name: postgres_exporter
+      docker_image: "wrouesnel/postgres_exporter"
+      version: v0.8.0
+      host_port: 9187  # Used for reverse proxy also
+      metrics_path: metrics
+      docker_labels:
+        - prometheus
+        - exporter
+        - postgres_exporter
+      data_source_name: "postgresql://postgres:postgres@127.0.0.1:5432?sslmode=disable"

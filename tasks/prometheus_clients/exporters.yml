@@ -27,6 +27,14 @@
     - server_config
     - prometheus_config
 
+- name: Exporters | Include PostgreSQL exporter
+  import_tasks: exporters/postgres_exporter.yml
+  when: prometheus_client.exporters.postgres_exporter.enabled
+  tags:
+    - server_config
+    - postgres_exporter
+    - prometheus_config
+
 - name: Exporters | Initialize host job config
   set_fact:
     job_config:

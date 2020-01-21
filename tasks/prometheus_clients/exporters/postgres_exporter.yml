@@ -1,0 +1,36 @@
+---
+- name: Exporters | Start docker postgres exporter container
+  docker_service:
+    state: present
+    project_name: prometheus_postgres_exporter
+    definition:
+      version: '2'
+      services:
+        postgres_exporter:
+          image: "{{ prometheus_client.exporters.postgres_exporter.docker_image }}:{{ prometheus_client.exporters.postgres_exporter.version }}"
+          container_name: "{{ prometheus_client.exporters.postgres_exporter.container_name }}"
+          ports:
+            - "127.0.0.1:{{ prometheus_client.exporters.postgres_exporter.host_port }}:{{ prometheus_client.exporters.postgres_exporter.host_port }}"
+          hostname: "{{ ansible_host }}"
+          restart: always
+          labels: "{{ prometheus_client.exporters.postgres_exporter.docker_labels }}"
+          environment:
+            - PG_EXPORTER_AUTO_DISCOVER_DATABASES=true
+            - DATA_SOURCE_NAME={{ prometheus_client.exporters.postgres_exporter.data_source_name }}
+          network_mode: host
+
+- name: Add autossh connection to the prometheus host
+  import_tasks: _autossh.yml
+  vars:
+    service_name: "postgres_exporter"
+    exporter_name: "Postgres Exporter"
+    local_port: "{{ prometheus_client.exporters.postgres_exporter.host_port }}"
+    connect_username: prometheus_client
+    connect_port: "{{ prometheus_client.exporters_autossh_to_prometheus.master_ssh_port }}"
+  when: prometheus_client.exporters_autossh_to_prometheus.enabled
+  tags:
+    - autossh
+    - prometheus_clients
+    - exporters
+    - server_config
+    - prometheus_config

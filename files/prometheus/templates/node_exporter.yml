@@ -8,105 +8,123 @@ groups:
     labels:
       severity: critical
     annotations:
-      summary: "Exporter is down"
-      summary_resolved: "Exporter is up"
-      description: "Returned value is {{ .Value }}"
+      summary: "{{ $labels.node_name }} node exporter is down."
+      summary_resolved: "{{ $labels.node_name }} node exporter is up."
+      description: "Returned value is {{ .Value }} for {{ $labels.node_name }} node exporter."
   - alert: OutOfMemory
     expr: (node_memory_MemFree_bytes + node_memory_Cached_bytes + node_memory_Buffers_bytes) / node_memory_MemTotal_bytes * 100 < 5
     for: 30m
     labels:
       severity: warning
     annotations:
-      summary: "Out of memory (< 5% left)"
-      summary_resolved: "Memory usage is under 95%"
-      description: "Node memory is filling up (< 10% left)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      summary: "Out of memory (< 5% left) on {{ $labels.node_name }}"
+      summary_resolved: "Memory usage is under 95% on {{ $labels.node_name }}"
+      description: "Node {{ $labels.node_name }} memory is filling up (< 10% left)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
   - alert: UnusualNetworkThroughputIn
     expr: sum by (instance) (irate(node_network_receive_bytes_total[2m])) / 1024 / 1024 > 100
     for: 30m
     labels:
       severity: warning
     annotations:
-      summary: "Unusual network throughput for a more than 30m to the instance"
-      summary_resolved: "Network activity is under 100mbit/s"
-      description: "Host network interfaces are probably receiving too much data (> 100 MB/s)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      summary: "Unusual network throughput for a more than 30m to the instance {{ $labels.node_name }}"
+      summary_resolved: "Network activity is under 100mbit/s on {{ $labels.node_name }}"
+      description: "Host network interfaces on {{ $labels.node_name }} are probably receiving too much data (> 100 MB/s)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
   - alert: UnusualNetworkThroughputOut
     expr: sum by (instance) (irate(node_network_transmit_bytes_total[2m])) / 1024 / 1024 > 100
     for: 30m
     labels:
       severity: warning
     annotations:
-      summary: "Unusual network throughput for a more than 30m from the instance"
-      summary_resolved: "Network activity is under 100mbit/s"
-      description: "Host network interfaces are probably sending too much data (> 100 MB/s)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      summary: "Unusual network throughput for a more than 30m from the instance {{ $labels.node_name }}"
+      summary_resolved: "Network activity is under 100mbit/s on {{ $labels.node_name }}"
+      description: "Host network interfaces on {{ $labels.node_name }} are probably sending too much data (> 100 MB/s)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
   - alert: UnusualDiskReadRate
     expr: sum by (instance) (irate(node_disk_read_bytes_total[2m])) / 1024 / 1024 > 50
     for: 30m
     labels:
       severity: warning
     annotations:
-      summary: "Unusual disk read rate (more than 50mbit/s)"
-      summary_resolved: "Disk read rate is under 50mbit/s"
-      description: "Disk is probably reading too much data (> 50 MB/s)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      summary: "Unusual disk read rate (more than 50mbit/s) on {{ $labels.node_name }}"
+      summary_resolved: "Disk read rate is under 50mbit/s on {{ $labels.node_name }}"
+      description: "Disk is probably reading too much data (> 50 MB/s) on {{ $labels.node_name }}\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
   - alert: UnusualDiskWriteRate
     expr: sum by (instance) (irate(node_disk_written_bytes_total[2m])) / 1024 / 1024 > 50
     for: 30m
     labels:
       severity: warning
     annotations:
-      summary: "Unusual disk write rate (more than 50mbit/s)"
-      summary_resolved: "Disk write rate is under 50mbit/s"
-      description: "Disk is probably writing too much data (> 50 MB/s)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      summary: "Unusual disk write rate (more than 50mbit/s) on {{ $labels.node_name }}"
+      summary_resolved: "Disk write rate is under 50mbit/s on {{ $labels.node_name }}"
+      description: "Disk is probably writing too much data (> 50 MB/s)on {{ $labels.node_name }}\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
   - alert: OutOfDiskSpace
     expr: node_filesystem_free_bytes{mountpoint ="/rootfs"} / node_filesystem_size_bytes{mountpoint ="/rootfs"} * 100 < 5
     for: 30m
     labels:
       severity: warning
     annotations:
-      summary: "Out of disk space (< 5% left)"
-      summary_resolved: "Disk usage is under 95%"
-      description: "Disk is almost full (< 10% left)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      summary: "Out of disk space (< 5% left) on {{ $labels.node_name }}"
+      summary_resolved: "Disk usage is under 95% on {{ $labels.node_name }}"
+      description: "Disk is almost full (< 10% left) on {{ $labels.node_name }}\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
   - alert: OutOfInodes
     expr: node_filesystem_files_free{mountpoint ="/rootfs"} / node_filesystem_files{mountpoint ="/rootfs"} * 100 < 5
     for: 30m
     labels:
       severity: warning
     annotations:
-      summary: "Out of inodes (< 5% left)"
-      summary_resolved: "Inodes count is under 95%"
-      description: "Disk is almost running out of available inodes (< 10% left)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      summary: "Out of inodes (< 5% left) on {{ $labels.node_name }}"
+      summary_resolved: "Inodes count is under 95% on {{ $labels.node_name }}"
+      description: "Disk is almost running out of available inodes (< 10% left) on {{ $labels.node_name }}\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
   - alert: UnusualDiskReadLatency
     expr: rate(node_disk_read_time_seconds_total[1m]) / rate(node_disk_reads_completed_total[1m]) > 100
     for: 30m
     labels:
       severity: warning
     annotations:
-      summary: "Unusual disk read latency (read operations > 100ms)"
-      summary_resolved: "Disk read latency is okay"
-      description: "Disk latency is growing (read operations > 100ms)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      summary: "Unusual disk read latency (read operations > 100ms) on {{ $labels.node_name }}"
+      summary_resolved: "Disk read latency is okay on {{ $labels.node_name }}"
+      description: "Disk latency is growing (read operations > 100ms) on {{ $labels.node_name }}\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
   - alert: UnusualDiskWriteLatency
     expr: rate(node_disk_write_time_seconds_total[1m]) / rate(node_disk_writes_completed_total[1m]) > 100
     for: 30m
     labels:
       severity: warning
     annotations:
-      summary: "Unusual disk write latency (write operations > 100ms)"
-      summary_resolved: "Disk write latency is okay"
-      description: "Disk latency is growing (write operations > 100ms)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      summary: "Unusual disk write latency (write operations > 100ms) on {{ $labels.node_name }}"
+      summary_resolved: "Disk write latency is okay on {{ $labels.node_name }}"
+      description: "Disk latency is growing (write operations > 100ms) on {{ $labels.node_name }}\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
   - alert: CpuLoad
     expr: node_load15 / (count without (cpu, mode) (node_cpu_seconds_total{mode="system"})) > 2
     for: 30m
     labels:
       severity: warning
     annotations:
-      summary: "CPU load is too high"
-      summary_resolved: "CPU load is okay"
-      description: "CPU load (15m) is high\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      summary: "CPU load is too high on {{ $labels.node_name }}"
+      summary_resolved: "CPU load is okay on {{ $labels.node_name }}"
+      description: "CPU load (15m) is high on {{ $labels.node_name }}\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
   - alert: ContextSwitching
     expr: rate(node_context_switches_total[5m]) > 4000
     for: 30m
     labels:
       severity: warning
     annotations:
-      summary: "Context switching is too high (> 4000 / s)"
-      summary_resolved: "Context switching is okay"
-      description: "Context switching is growing on node (> 4000 / s)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      summary: "Context switching is too high (> 4000 / s) on {{ $labels.node_name }}"
+      summary_resolved: "Context switching is okay on {{ $labels.node_name }}"
+      description: "Context switching is growing on node (> 4000 / s) on {{ $labels.node_name }}\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+  - alert: HostRebooted
+    expr: (time() - node_boot_time_seconds) < 180
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Too low uptime found on {{ $labels.node_name }}"
+      summary_resolved: "Uptime is okay on {{ $labels.node_name }}"
+      description: "Uptime is too small on {{ $labels.node_name }}, looks that node was rebooted"
+  - alert: OutOfEntropy
+    expr: node_entropy_available_bits < 300
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Not enough entropy on {{ $labels.node_name }}"
+      summary_resolved: "Entropy bits are okay on {{ $labels.node_name }}"
+      description: "Entropy bits count is too small on {{ $labels.node_name }} it can slow some crypto operations"
