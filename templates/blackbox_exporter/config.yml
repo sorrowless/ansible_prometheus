@@ -1,0 +1,1 @@
+modules: {{ prometheus_client.exporters.blackbox_exporter.blackbox_config | to_nice_json }}

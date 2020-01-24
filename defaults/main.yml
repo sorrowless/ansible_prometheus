@@ -176,3 +176,44 @@ prometheus_clients_data:
         - exporter
         - postgres_exporter
       data_source_name: "postgresql://postgres:postgres@127.0.0.1:5432?sslmode=disable"
+    blackbox_exporter:
+      enabled: false
+      container_name: blackbox_exporter
+      docker_image: "prom/blackbox-exporter"
+      version: v0.16.0
+      host_port: 9115  # Used for reverse proxy also
+      metrics_path: probe
+      docker_labels:
+        - prometheus
+        - exporter
+        - blackbox_exporter
+      probes_config:
+        - scrape_params:
+            module: [http_2xx]
+          scrape_targets:
+            - https://prometheus.io
+            - google.com
+          config_name: http
+        - scrape_params:
+            module: [icmp]
+          scrape_targets:
+            - 8.8.8.8
+            - 1.1.1.1
+          config_name: icmp
+      blackbox_config:
+        http_2xx:
+          prober: http
+          timeout: 5s
+          http:
+            method: GET
+            valid_status_codes: []  # Defaults to 2xx
+            valid_http_versions: ["HTTP/1.1", "HTTP/2"]
+            preferred_ip_protocol: "ip4"
+            no_follow_redirects: false
+            fail_if_ssl: false
+            fail_if_not_ssl: false
+        icmp:
+          prober: icmp
+          timeout: 5s
+          icmp:
+            preferred_ip_protocol: "ip4"

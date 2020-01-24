@@ -56,6 +56,7 @@
 - name: Add target to prometheus scrape static configs
   set_fact:
     static_configs: "{{ static_configs + [ exporter_config ] }}"
+  when: do_not_add_config is not defined
   tags:
     - server_config
     - prometheus_config

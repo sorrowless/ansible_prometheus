@@ -44,3 +44,19 @@
   tags:
     - server_config
     - prometheus_config
+
+- name: Exporters | Include blackbox exporter
+  import_tasks: exporters/blackbox_exporter.yml
+  when: prometheus_client.exporters.blackbox_exporter.enabled
+  tags:
+    - server_config
+    - blackbox_exporter
+    - prometheus_config
+
+- name: Exporters | Add blackbox exporter config to the main host job config
+  set_fact:
+    job_config: "{{ [ job_config ] + [ blackbox_jobs_config ] | flatten }}"
+  when: prometheus_client.exporters.blackbox_exporter.enabled
+  tags:
+    - server_config
+    - prometheus_config

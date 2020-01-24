@@ -1,0 +1,65 @@
+# vim: set ft=ansible:
+---
+- name: Exporters | Ensure blackbox config directory
+  file:
+    path: /var/lib/blackbox
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: Exporters | Copy blackbox config file
+  template:
+    src: blackbox_exporter/config.yml
+    dest: /var/lib/blackbox/config.yml
+    mode: 0644
+    owner: root
+    group: root
+
+- name: Exporters | Start docker blackbox exporter container
+  docker_service:
+    state: present
+    project_name: prometheus_blackbox_exporter
+    definition:
+      version: '2'
+      services:
+        blackbox_exporter:
+          image: "{{ prometheus_client.exporters.blackbox_exporter.docker_image }}:{{ prometheus_client.exporters.blackbox_exporter.version }}"
+          command: "--config.file=/config/config.yml"
+          container_name: "{{ prometheus_client.exporters.blackbox_exporter.container_name }}"
+          ports:
+            - "127.0.0.1:{{ prometheus_client.exporters.blackbox_exporter.host_port }}:{{ prometheus_client.exporters.blackbox_exporter.host_port }}"
+          hostname: "{{ ansible_host }}"
+          volumes:
+            - /var/lib/blackbox:/config
+          restart: always
+          labels: "{{ prometheus_client.exporters.blackbox_exporter.docker_labels }}"
+          network_mode: host
+
+- name: Add autossh connection to the prometheus host
+  import_tasks: _autossh.yml
+  vars:
+    service_name: "blackbox_exporter"
+    exporter_name: "blackbox Exporter"
+    local_port: "{{ prometheus_client.exporters.blackbox_exporter.host_port }}"
+    connect_username: prometheus_client
+    connect_port: "{{ prometheus_client.exporters_autossh_to_prometheus.master_ssh_port }}"
+    do_not_add_config: true
+  when: prometheus_client.exporters_autossh_to_prometheus.enabled
+  tags:
+    - autossh
+    - prometheus_clients
+    - exporters
+    - server_config
+    - prometheus_config
+
+- name: Create scrape config var for blackbox exporter
+  include_tasks: blackbox_exporter_job.yml
+  with_items: "{{ prometheus_client.exporters.blackbox_exporter.probes_config }}"
+  tags:
+    - prometheus_clients
+    - exporters
+    - blackbox_exporter
+    - server_config
+    - prometheus_config
+

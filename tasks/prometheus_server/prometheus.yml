@@ -10,7 +10,7 @@
 
 - name: Set variable with scrape configs
   set_fact:
-    scrape_configs: "{{ scrape_configs | default([]) + [hostvars[item].job_config] }}"
+    scrape_configs: "{{ scrape_configs | default([]) + [hostvars[item].job_config] | flatten }}"
   with_items: "{{ ansible_play_hosts_all }}"
   when: hostvars[item].job_config is defined
 
