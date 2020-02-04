@@ -1,0 +1,21 @@
+---
+groups:
+  - name: TLS.rules
+    rules:
+    - alert: TLSCertExpiringSoon
+      expr: 1 < (probe_ssl_earliest_cert_expiry - time()) / 86400 < 7
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        summary: "{{ $labels.node_name }} has a {{ $labels.instance }} endpoint with expiring cert."
+        description: "{{ $labels.instance }} TLS certificate is expiring (current value: {{ $value }}s). Services may be degraded - please take action"
+
+    - alert: TLSCertExpiringInDay
+      expr: (probe_ssl_earliest_cert_expiry - time()) / 86400 < 1
+      for: 10m
+      labels:
+        severity: critical
+      annotations:
+        summary: "{{ $labels.node_name }} has a {{ $labels.instance }} endpoint with expiring cert."
+        description: "{{ $labels.instance }} TLS certificate is expiring (current value: {{ $value }}s). Services may be degraded - please take action"

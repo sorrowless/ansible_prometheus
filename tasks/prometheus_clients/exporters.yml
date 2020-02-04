@@ -27,6 +27,14 @@
     - server_config
     - prometheus_config
 
+- name: Exporters | Include scripts telegraf exporter
+  import_tasks: exporters/scripts_exporter.yml
+  when: prometheus_client.exporters.scripts_exporter.enabled
+  tags:
+    - scripts_exporter
+    - server_config
+    - prometheus_config
+
 - name: Exporters | Include PostgreSQL exporter
   import_tasks: exporters/postgres_exporter.yml
   when: prometheus_client.exporters.postgres_exporter.enabled

@@ -13,3 +13,8 @@
   docker_container:
     name: "{{ prometheus.alertmanager.telegram_bot.container_name }}"
     restart: yes
+
+- name: Restart telegraf exporter
+  service:
+    name: telegraf-exporter.service
+    state: restarted

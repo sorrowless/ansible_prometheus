@@ -1,38 +1,60 @@
-Role Name
-=========
+sbog/prometheus
+===============
 
-A brief description of the role goes here.
+Role to install and configure full-fledged monitoring solution based on
+Prometheus.
 
-Requirements
-------------
+#### Requirements
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+Ansible>=2.8
+We're using remote recurse copy which was added only in Ansible 2.8. Basically
+one can rewrite grok exporter and run this role on lower version of Ansible if
+he wants to.
 
-Role Variables
---------------
+Also it is worth to mention that by default Prometheus doesn't work over wild
+internet and doesn't support any decent authentication/authorization for
+exporters so all the security over not secured network should be done by user
+itself. In current role it is done two ways. First, deprecated, is to setup
+nginx reverse proxy and setup basic auth in it. This way also supposed to issue
+needed certificates. Unfortunately, this way is not so easy to implement as
+there can be nodes which don't have a DNS name set up and as a result it is
+hard to issue a certificate for them and force prometheus master server to
+trust such a certificate. If one wants to go this way though, he should know
+that setting up full-fledged PKI is not a part of this role and has to be done
+by user itself. Second way to create trusted reliable channel to send data from
+nodes exporters to Prometheus master is to create ssh connection to master from
+slaves for each of the exporters. Overall idea is that every exporter exposes
+TCP port to get metrics from. Then node with such an exporter can create a SSH
+reverse proxy connection to the master node. It will allow the master to go to
+the locally opened ports on master node and SSH will pass the connection to
+according slave node exporter. In such a solution all we need is to setup
+trusts between slave nodes and master nodes properly to ensure that such a
+connection can be created. This can be done with the role
+sorrowless/ansible_ssh_trust.  Connections in our case are wrapped around
+AutoSSH services so they are never stalled and in case of failing are reopened.
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+#### Role Variables
 
-Dependencies
-------------
+For full list of variables look to `defaults/main.yml` file.
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+#### Dependencies
 
-Example Playbook
-----------------
+None
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
+#### Example Playbook
 
-    - hosts: servers
-      roles:
-         - { role: username.rolename, x: 42 }
+```yaml
+- name: Install monitoring solution
+  hosts: monitoring
+  remote_user: root
+  roles:
+    - prometheus
+```
 
-License
--------
+#### License
 
-BSD
+Apache 2.0
 
-Author Information
-------------------
+#### Author Information
 
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
+Stan Bogatkin (https://sbog.ru)

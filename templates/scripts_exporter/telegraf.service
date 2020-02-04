@@ -1,0 +1,21 @@
+[Unit]
+Description=Prometheus telegraf-based script exporter service
+After=network.target
+
+[Service]
+{% if prometheus_client.exporters.scripts_exporter.username %}
+User={{ prometheus_client.exporters.scripts_exporter.username }}
+Group={{ prometheus_client.exporters.scripts_exporter.username }}
+{% else %}
+User=root
+Group=root
+{% endif %}
+PermissionsStartOnly=true
+ExecStart=/usr/local/bin/telegraf --config {{ prometheus_client.exporters.scripts_exporter.config_dir }}/telegraf.conf
+ExecStop=/bin/kill -s TERM $MAINPID
+PrivateTmp=true
+Restart=on-failure
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=multi-user.target

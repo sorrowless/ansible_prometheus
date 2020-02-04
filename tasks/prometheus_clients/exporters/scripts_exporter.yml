@@ -1,0 +1,95 @@
+# vim: set ft=ansible:
+---
+- name: Exporters | Scripts exporter | Ensure config dir
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+    owner: root
+    group: root
+  with_items:
+    - "{{ prometheus_client.exporters.scripts_exporter.config_dir }}"
+    - "{{ prometheus_client.exporters.scripts_exporter.scripts_dir }}"
+    - "{{ prometheus_client.exporters.scripts_exporter.config_dir }}/sources"
+    - "{{ prometheus_client.exporters.scripts_exporter.config_dir }}/sources/{{ prometheus_client.exporters.scripts_exporter.version }}"
+
+- name: Exporters | Scripts exporter | Get telegraf distribution
+  get_url:
+    url: "https://dl.influxdata.com/telegraf/releases/telegraf-{{ prometheus_client.exporters.scripts_exporter.version }}-static_{{ prometheus_client.exporters.scripts_exporter.arch }}.tar.gz"
+    dest: "{{ prometheus_client.exporters.scripts_exporter.config_dir }}/sources/telegraf-{{ prometheus_client.exporters.scripts_exporter.version }}.{{ prometheus_client.exporters.scripts_exporter.arch }}.tar.gz"
+    mode: 0644
+    owner: root
+    group: root
+
+- name: Exporters | Scripts exporter | Unpack Scripts exporter
+  unarchive:
+    remote_src: yes
+    src: "{{ prometheus_client.exporters.scripts_exporter.config_dir }}/sources/telegraf-{{ prometheus_client.exporters.scripts_exporter.version }}.{{ prometheus_client.exporters.scripts_exporter.arch }}.tar.gz"
+    dest: "{{ prometheus_client.exporters.scripts_exporter.config_dir }}/sources/{{ prometheus_client.exporters.scripts_exporter.version }}"
+    creates: "{{ prometheus_client.exporters.scripts_exporter.config_dir }}/sources/{{ prometheus_client.exporters.scripts_exporter.version }}/telegraf/telegraf"
+
+- name: Exporters | Scripts exporter | Copy exporter to PATH
+  copy:
+    remote_src: yes
+    src: "{{ prometheus_client.exporters.scripts_exporter.config_dir }}/sources/{{ prometheus_client.exporters.scripts_exporter.version }}/telegraf/telegraf"
+    dest: /usr/local/bin/telegraf
+    mode: 0755
+    owner: root
+    group: root
+
+- name: Exporters | Scripts exporter | Copy scripts to run to target node
+  copy:
+    remote_src: no
+    src: "scripts_exporter/scripts/"
+    dest: "{{ prometheus_client.exporters.scripts_exporter.scripts_dir }}/"
+    mode: 0755
+    owner: root
+    group: root
+
+- name: Exporters | Scripts exporter | Create Scripts exporter user
+  user:
+    name: "{{ prometheus_client.exporters.scripts_exporter.username }}"
+    comment: "Scripts exporter user"
+    shell: /usr/sbin/nologin
+  when: prometheus_client.exporters.scripts_exporter.create_user
+
+- name: Exporters | Scripts exporter | Ensure Scripts exporter configuration
+  template:
+    src: scripts_exporter/telegraf.conf
+    dest: "{{ prometheus_client.exporters.scripts_exporter.config_dir }}/telegraf.conf"
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - Restart telegraf exporter
+
+- name: Exporters | Scripts exporter | Ensure Scripts exporter systemd unit
+  template:
+    src: scripts_exporter/telegraf.service
+    dest: "/etc/systemd/system/telegraf-exporter.service"
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - Restart telegraf exporter
+
+- name: Exporters | Scripts exporter | Enable systemd service
+  systemd:
+    name: telegraf-exporter.service
+    enabled: yes
+    daemon_reload: yes
+    state: started
+
+- name: Add autossh connection to the prometheus host
+  include_tasks: _autossh.yml
+  vars:
+    service_name: "scripts_exporter"
+    exporter_name: "Prometheus scripts exporter"
+    local_port: "{{ prometheus_client.exporters.scripts_exporter.host_port }}"
+    connect_username: prometheus_client
+    connect_port: "{{ prometheus_client.exporters_autossh_to_prometheus.master_ssh_port }}"
+  when: prometheus_client.exporters_autossh_to_prometheus.enabled
+  tags:
+    - autossh
+    - prometheus_clients
+    - exporters

@@ -217,3 +217,21 @@ prometheus_clients_data:
           timeout: 5s
           icmp:
             preferred_ip_protocol: "ip4"
+    scripts_exporter:
+      # We're using telegraf to execute custom scripts.
+      enabled: false
+      version: '1.13.2'
+      arch: linux_amd64
+      config_dir: /var/lib/telegraf
+      scripts_dir: /var/lib/telegraf/scripts
+      create_user: true
+      username: telegraf
+      listen_host: 127.0.0.1
+      host_port: 9273
+      scripts: []
+      #scripts:
+      #- name: test script
+      #    script_name: "test"
+      #    script_params: "test"
+      #    data_format: json
+      #    name_override: "test_metric"
