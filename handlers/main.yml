@@ -18,3 +18,8 @@
   service:
     name: telegraf-exporter.service
     state: restarted
+
+- name: Restart node exporter
+  service:
+    name: node-exporter.service
+    state: restarted

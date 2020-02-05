@@ -8,16 +8,79 @@
       services:
         node_exporter:
           image: "{{ prometheus_client.exporters.node_exporter.docker_image }}"
-          command: "--collector.systemd"
+          command: "--collector.systemd --path.rootfs=/host"
           container_name: "{{ prometheus_client.exporters.node_exporter.container_name }}"
           ports:
             - "127.0.0.1:{{ prometheus_client.exporters.node_exporter.host_port }}:9100"
           volumes:
             - /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket:ro
+            - /:/host:ro,rslave
           hostname: "{{ ansible_host }}"
           restart: always
           labels: "{{ prometheus_client.exporters.node_exporter.docker_labels }}"
           network_mode: host
+  when: prometheus_client.exporters.node_exporter.dockerized
+
+- name: Exporters | Node exporter | Ensure config dir
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+    owner: root
+    group: root
+  with_items:
+    - "{{ prometheus_client.exporters.node_exporter.config_dir }}"
+    - "{{ prometheus_client.exporters.node_exporter.config_dir }}/sources"
+  when: not prometheus_client.exporters.node_exporter.dockerized
+
+- name: Exporters | Node exporter | Get node exporter
+  get_url:
+    url: "https://github.com/prometheus/node_exporter/releases/download/v{{ prometheus_client.exporters.node_exporter.version }}/node_exporter-{{ prometheus_client.exporters.node_exporter.version }}.{{ prometheus_client.exporters.node_exporter.arch }}.tar.gz"
+    dest: "{{ prometheus_client.exporters.node_exporter.config_dir }}/sources/node_exporter-{{ prometheus_client.exporters.node_exporter.version }}.{{ prometheus_client.exporters.node_exporter.arch }}.tar.gz"
+    mode: 0644
+    owner: root
+    group: root
+  when: not prometheus_client.exporters.node_exporter.dockerized
+
+- name: Exporters | Node exporter | Unzip node exporter
+  unarchive:
+    remote_src: yes
+    src: "{{ prometheus_client.exporters.node_exporter.config_dir }}/sources/node_exporter-{{ prometheus_client.exporters.node_exporter.version }}.{{ prometheus_client.exporters.node_exporter.arch }}.tar.gz"
+    dest: "{{ prometheus_client.exporters.node_exporter.config_dir }}/sources/"
+    creates: "{{ prometheus_client.exporters.node_exporter.config_dir }}/sources/node_exporter-{{ prometheus_client.exporters.node_exporter.version }}.{{ prometheus_client.exporters.node_exporter.arch }}/node_exporter"
+  when: not prometheus_client.exporters.node_exporter.dockerized
+
+- name: Exporters | Node exporter | Copy exporter to PATH
+  copy:
+    remote_src: yes
+    src: "{{ prometheus_client.exporters.node_exporter.config_dir }}/sources/node_exporter-{{ prometheus_client.exporters.node_exporter.version }}.{{ prometheus_client.exporters.node_exporter.arch }}/node_exporter"
+    dest: /usr/local/bin/node_exporter
+    mode: 0755
+    owner: root
+    group: root
+  notify:
+    - Restart node exporter
+  when: not prometheus_client.exporters.node_exporter.dockerized
+
+- name: Exporters | Node exporter | Ensure node exporter systemd unit
+  template:
+    src: node_exporter/systemd.service
+    dest: "/etc/systemd/system/node-exporter.service"
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - Restart node exporter
+  when: not prometheus_client.exporters.node_exporter.dockerized
+
+# TODO(sbog): rework this to restart only changed services
+- name: Exporters | Node exporter | Enable systemd service
+  systemd:
+    name: "node-exporter.service"
+    enabled: yes
+    daemon_reload: yes
+    state: started
+  when: not prometheus_client.exporters.node_exporter.dockerized
 
 - name: Add autossh connection to the prometheus host
   import_tasks: _autossh.yml

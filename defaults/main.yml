@@ -124,7 +124,11 @@ prometheus_clients_data:
   exporters:
     node_exporter:
       enabled: false
+      dockerized: false
+      version: '0.18.1'
+      arch: linux-amd64
       container_name: node_exporter
+      config_dir: /var/lib/node_exporter
       docker_image: "quay.io/prometheus/node-exporter"
       host_port: 9100  # Used for reverse proxy also
       metrics_path: metrics
