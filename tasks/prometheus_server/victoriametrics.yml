@@ -14,6 +14,9 @@
       services:
         victoriametrics:
           image: "{{ prometheus.victoriametrics.docker_image }}"
+          command:
+            - "-retentionPeriod=3"
+            - "-storageDataPath=/victoria-metrics-data"
           container_name: "{{ prometheus.victoriametrics.container_name }}"
           ports:
             - "127.0.0.1:8428:8428"
@@ -37,6 +40,9 @@
       services:
         victoriametrics:
           image: "{{ prometheus.victoriametrics.docker_image }}"
+          command:
+            - "-retentionPeriod=3"
+            - "-storageDataPath=/victoria-metrics-data"
           container_name: "{{ prometheus.victoriametrics.container_name }}"
           ports:
             - "127.0.0.1:8428:8428"
