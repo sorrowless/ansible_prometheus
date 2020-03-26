@@ -49,6 +49,9 @@
       job_name: "{{ ansible_host }}"
       honor_labels: false
       static_configs: "{{ static_configs }}"
+      relabel_configs:
+        - source_labels: ["job"]
+          target_label: instance
   tags:
     - server_config
     - prometheus_config

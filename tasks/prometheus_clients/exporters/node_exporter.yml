@@ -22,6 +22,8 @@
   when: prometheus_client.exporters.node_exporter.dockerized
 
 - name: Exporters | Node exporter | Ensure config dir
+  become: yes
+  become_user: root
   file:
     path: "{{ item }}"
     state: directory
@@ -34,6 +36,8 @@
   when: not prometheus_client.exporters.node_exporter.dockerized
 
 - name: Exporters | Node exporter | Get node exporter
+  become: yes
+  become_user: root
   get_url:
     url: "https://github.com/prometheus/node_exporter/releases/download/v{{ prometheus_client.exporters.node_exporter.version }}/node_exporter-{{ prometheus_client.exporters.node_exporter.version }}.{{ prometheus_client.exporters.node_exporter.arch }}.tar.gz"
     dest: "{{ prometheus_client.exporters.node_exporter.config_dir }}/sources/node_exporter-{{ prometheus_client.exporters.node_exporter.version }}.{{ prometheus_client.exporters.node_exporter.arch }}.tar.gz"
@@ -43,6 +47,8 @@
   when: not prometheus_client.exporters.node_exporter.dockerized
 
 - name: Exporters | Node exporter | Unzip node exporter
+  become: yes
+  become_user: root
   unarchive:
     remote_src: yes
     src: "{{ prometheus_client.exporters.node_exporter.config_dir }}/sources/node_exporter-{{ prometheus_client.exporters.node_exporter.version }}.{{ prometheus_client.exporters.node_exporter.arch }}.tar.gz"
@@ -51,6 +57,8 @@
   when: not prometheus_client.exporters.node_exporter.dockerized
 
 - name: Exporters | Node exporter | Copy exporter to PATH
+  become: yes
+  become_user: root
   copy:
     remote_src: yes
     src: "{{ prometheus_client.exporters.node_exporter.config_dir }}/sources/node_exporter-{{ prometheus_client.exporters.node_exporter.version }}.{{ prometheus_client.exporters.node_exporter.arch }}/node_exporter"
@@ -63,6 +71,8 @@
   when: not prometheus_client.exporters.node_exporter.dockerized
 
 - name: Exporters | Node exporter | Ensure node exporter systemd unit
+  become: yes
+  become_user: root
   template:
     src: node_exporter/systemd.service
     dest: "/etc/systemd/system/node-exporter.service"
@@ -75,6 +85,8 @@
 
 # TODO(sbog): rework this to restart only changed services
 - name: Exporters | Node exporter | Enable systemd service
+  become: yes
+  become_user: root
   systemd:
     name: "node-exporter.service"
     enabled: yes

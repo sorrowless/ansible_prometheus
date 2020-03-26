@@ -1,10 +1,14 @@
 ---
 - name: Common | Install needed packages
+  become: yes
+  become_user: root
   package:
     name: "{{ prometheus.packages }}"
     state: present
 
 - name: Common | Ensure pip packages
+  become: yes
+  become_user: root
   pip:
     name:
       - docker
@@ -12,12 +16,16 @@
     state: present
 
 - name: Common | Ensure docker daemon enabled
+  become: yes
+  become_user: root
   systemd:
     name: docker.service
     state: started
     enabled: yes
 
 - name: Common | Configure network ranges for docker hosts
+  become: yes
+  become_user: root
   docker_network:
     name: "{{ prometheus.docker.network_name }}"
     driver_options:
