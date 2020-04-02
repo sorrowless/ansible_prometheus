@@ -63,6 +63,9 @@
   when:
     - prometheus.docker.network_name != "host"
     - prometheus.prometheus.install_server
+  tags:
+    - prometheus
+    - prometheus_server
 
 - name: Prometheus | Stop docker prometheus container
   docker_service:
@@ -87,6 +90,9 @@
     - prometheus.docker.network_name == "host"
     - prometheus.prometheus.install_server
   failed_when: false
+  tags:
+    - prometheus
+    - prometheus_server
 
 - name: Include exporters tasks
   import_tasks: prometheus_clients/exporters.yml
