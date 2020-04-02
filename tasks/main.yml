@@ -37,6 +37,57 @@
     - prometheus_clients
     - prometheus_server
 
+# We have to stop prometheus to have seamless addition of new nodes
+- name: Prometheus | Stop docker prometheus container
+  docker_service:
+    state: present
+    stopped: yes
+    project_name: prometheus
+    definition:
+      version: '2'
+      services:
+        prometheus:
+          image: "{{ prometheus.prometheus.docker_image }}"
+          container_name: "{{ prometheus.prometheus.container_name }}"
+          ports:
+            - "127.0.0.1:9090:9090"
+          volumes:
+            - "{{ prometheus.prometheus.config_dir }}/:/etc/prometheus/"
+          hostname: "{{ prometheus.prometheus.container_name }}"
+          restart: always
+          labels: "{{ prometheus.prometheus.docker_labels }}"
+      networks:
+        default:
+          external:
+            name: "{{ prometheus.docker.network_name }}"
+  when:
+    - prometheus.docker.network_name != "host"
+    - prometheus.prometheus.install_server
+
+- name: Prometheus | Stop docker prometheus container
+  docker_service:
+    state: present
+    stopped: yes
+    project_name: prometheus
+    definition:
+      version: '2'
+      services:
+        prometheus:
+          image: "{{ prometheus.prometheus.docker_image }}"
+          container_name: "{{ prometheus.prometheus.container_name }}"
+          ports:
+            - "127.0.0.1:9090:9090"
+          volumes:
+            - "{{ prometheus.prometheus.config_dir }}/:/etc/prometheus/"
+          hostname: "{{ prometheus.prometheus.container_name }}"
+          restart: always
+          labels: "{{ prometheus.prometheus.docker_labels }}"
+          network_mode: host
+  when:
+    - prometheus.docker.network_name == "host"
+    - prometheus.prometheus.install_server
+  failed_when: false
+
 - name: Include exporters tasks
   import_tasks: prometheus_clients/exporters.yml
   tags:

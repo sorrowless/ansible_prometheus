@@ -102,7 +102,7 @@ groups:
       summary_resolved: "CPU load is okay on {{ $labels.node_name }}"
       description: "CPU load (15m) is high on {{ $labels.node_name }}\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
   - alert: ContextSwitching
-    expr: rate(node_context_switches_total[5m]) > 4000
+    expr: rate(node_context_switches_total[5m]) > 20000
     for: 30m
     labels:
       severity: warning
