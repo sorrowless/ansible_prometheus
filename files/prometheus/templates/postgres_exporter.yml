@@ -55,3 +55,75 @@ groups:
       annotations:
         summary: "PostgreSQL low cache hit rate on {{ $labels.cluster }} for database {{ $labels.datname }}"
         description: "PostgreSQL low on cache hit rate on {{ $labels.cluster }} for database {{ $labels.datname }} with a value of {{ $value }}"
+
+    - alert: PostgresqlRestarted
+      expr: time() - pg_postmaster_start_time_seconds < 60
+      for: 5m
+      labels:
+        severity: error
+      annotations:
+        summary: "Postgresql restarted (instance {{ $labels.node_name }})"
+        description: "Postgresql restarted\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+    - alert: PostgresqlExporterError
+      expr: pg_exporter_last_scrape_error > 0
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Postgresql exporter error (instance {{ $labels.node_name }})"
+        description: "Postgresql exporter is showing errors. A query may be buggy in query.yaml\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+    - alert: PostgresqlDeadLocks
+      expr: rate(pg_stat_database_deadlocks{datname!~"template.*|postgres"}[1m]) > 0
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Postgresql dead locks (instance {{ $labels.node_name }})"
+        description: "PostgreSQL has dead-locks\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+    - alert: PostgresqlSlowQueries
+      expr: pg_slow_queries > 0
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Postgresql slow queries (instance {{ $labels.node_name }})"
+        description: "PostgreSQL executes slow queries\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+    - alert: PostgresqlHighRollbackRate
+      expr: rate(pg_stat_database_xact_rollback{datname!~"template.*"}[3m]) / rate(pg_stat_database_xact_commit{datname!~"template.*"}[3m]) > 0.02
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Postgresql high rollback rate (instance {{ $labels.node_name }})"
+        description: "Ratio of transactions being aborted compared to committed is > 2 %\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+    - alert: PostgresqlHighRateStatementTimeout
+      expr: rate(postgresql_errors_total{type="statement_timeout"}[5m]) > 3
+      for: 5m
+      labels:
+        severity: error
+      annotations:
+        summary: "Postgresql high rate statement timeout (instance {{ $labels.node_name }})"
+        description: "Postgres transactions showing high rate of statement timeouts\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+    - alert: PostgresqlTooManyDeadTuples
+      expr: ((pg_stat_user_tables_n_dead_tup > 10000) / (pg_stat_user_tables_n_live_tup + pg_stat_user_tables_n_dead_tup)) >= 0.1 unless ON(instance) (pg_replication_is_replica == 1)
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Postgresql too many dead tuples (instance {{ $labels.node_name }})"
+        description: "PostgreSQL dead tuples is too large\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+    - alert: PostgresqlTooManyLocksAcquired
+      expr: ((sum (pg_locks_count)) / (pg_settings_max_locks_per_transaction * pg_settings_max_connections)) > 0.20
+      for: 5m
+      labels:
+        severity: error
+      annotations:
+        summary: "Postgresql too many locks acquired (instance {{ $labels.node_name }})"
+        description: "Too many locks acquired on the database. If this alert happens frequently, we may need to increase the postgres setting max_locks_per_transaction.\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"

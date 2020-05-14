@@ -128,3 +128,12 @@ groups:
       summary: "Not enough entropy on {{ $labels.node_name }}"
       summary_resolved: "Entropy bits are okay on {{ $labels.node_name }}"
       description: "Entropy bits count is too small on {{ $labels.node_name }} it can slow some crypto operations"
+  - alert: ServiceIsDown
+    expr: node_systemd_unit_state{state="failed",name!~"hv-.*"} == 1
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Service {{ $labels.name }} is down on {{ $labels.node_name }}"
+      summary_resolved: "Service {{ $labels.name }} is up on {{ $labels.node_name }}"
+      description: "Service {{ $labels.name }} is down on {{ $labels.node_name }} which can lead to some services unavailability"
