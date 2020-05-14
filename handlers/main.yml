@@ -23,3 +23,13 @@
   service:
     name: node-exporter.service
     state: restarted
+
+- name: Restart postgres exporter
+  service:
+    name: postgres-exporter.service
+    state: restarted
+
+- name: Restart mysqld exporter
+  service:
+    name: mysqld-exporter.service
+    state: restarted

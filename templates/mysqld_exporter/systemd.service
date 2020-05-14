@@ -1,0 +1,16 @@
+[Unit]
+Description=Mysqld exporter service
+After=network.target
+
+[Service]
+User={{ prometheus_client.exporters.mysqld_exporter.username }}
+Group={{ prometheus_client.exporters.mysqld_exporter.username }}
+EnvironmentFile={{ prometheus_client.exporters.mysqld_exporter.config_dir }}/envvars
+ExecStart=/usr/local/bin/mysqld_exporter --no-collect.info_schema.innodb_cmp --no-collect.info_schema.innodb_cmpmem --no-collect.slave_status
+ExecStop=/bin/kill -s TERM $MAINPID
+PrivateTmp=true
+Restart=on-failure
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=multi-user.target

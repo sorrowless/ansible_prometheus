@@ -18,6 +18,89 @@
             - PG_EXPORTER_AUTO_DISCOVER_DATABASES=true
             - DATA_SOURCE_NAME={{ prometheus_client.exporters.postgres_exporter.data_source_name }}
           network_mode: host
+  when: prometheus_client.exporters.postgres_exporter.dockerized
+
+- name: Exporters | Postgres exporter | Ensure configuration directory
+  become: yes
+  become_user: root
+  file:
+    path: "{{ prometheus_client.exporters.postgres_exporter.config_dir }}/sources/"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: Exporters | Postgres exporter | Get postgres exporter
+  become: yes
+  become_user: root
+  get_url:
+    # https://github.com/wrouesnel/postgres_exporter/releases/download/v0.8.0/postgres_exporter_v0.8.0_linux-amd64.tar.gz
+    url: "https://github.com/wrouesnel/postgres_exporter/releases/download/{{ prometheus_client.exporters.postgres_exporter.version }}/postgres_exporter_{{ prometheus_client.exporters.postgres_exporter.version }}_{{ prometheus_client.exporters.postgres_exporter.arch }}.tar.gz"
+    dest: "{{ prometheus_client.exporters.postgres_exporter.config_dir }}/sources/postgres_exporter_{{ prometheus_client.exporters.postgres_exporter.version }}_{{ prometheus_client.exporters.postgres_exporter.arch }}.tar.gz"
+    mode: 0644
+    owner: root
+    group: root
+  when: not prometheus_client.exporters.postgres_exporter.dockerized
+
+- name: Exporters | Postgres exporter | Unzip postgres exporter
+  become: yes
+  become_user: root
+  unarchive:
+    remote_src: yes
+    src: "{{ prometheus_client.exporters.postgres_exporter.config_dir }}/sources/postgres_exporter_{{ prometheus_client.exporters.postgres_exporter.version }}_{{ prometheus_client.exporters.postgres_exporter.arch }}.tar.gz"
+    dest: "{{ prometheus_client.exporters.postgres_exporter.config_dir }}/sources/"
+    creates: "{{ prometheus_client.exporters.postgres_exporter.config_dir }}/sources/postgres_exporter_{{ prometheus_client.exporters.postgres_exporter.version }}_{{ prometheus_client.exporters.postgres_exporter.arch }}/postgres_exporter"
+  when: not prometheus_client.exporters.postgres_exporter.dockerized
+
+- name: Exporters | Postgres exporter | Copy exporter to PATH
+  become: yes
+  become_user: root
+  copy:
+    remote_src: yes
+    src: "{{ prometheus_client.exporters.postgres_exporter.config_dir }}/sources/postgres_exporter_{{ prometheus_client.exporters.postgres_exporter.version }}_{{ prometheus_client.exporters.postgres_exporter.arch }}/postgres_exporter"
+    dest: /usr/local/bin/postgres_exporter
+    mode: 0755
+    owner: root
+    group: root
+  notify:
+    - Restart postgres exporter
+  when: not prometheus_client.exporters.postgres_exporter.dockerized
+
+- name: Exporters | Postgres exporter | Ensure postgres exporter systemd unit
+  become: yes
+  become_user: root
+  template:
+    src: postgres_exporter/systemd.service
+    dest: "/etc/systemd/system/postgres-exporter.service"
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - Restart postgres exporter
+  when: not prometheus_client.exporters.postgres_exporter.dockerized
+
+- name: Exporters | Postgres exporter | Ensure postgres exporter env vars file
+  become: yes
+  become_user: root
+  template:
+    src: postgres_exporter/envvars
+    dest: "{{ prometheus_client.exporters.postgres_exporter.config_dir }}/envvars"
+    owner: root
+    group: postgres
+    mode: 0640
+  notify:
+    - Restart postgres exporter
+  when: not prometheus_client.exporters.postgres_exporter.dockerized
+
+- name: Exporters | Postgres exporter | Enable systemd service
+  become: yes
+  become_user: root
+  systemd:
+    name: "postgres-exporter.service"
+    enabled: yes
+    daemon_reload: yes
+    state: started
+  when: not prometheus_client.exporters.postgres_exporter.dockerized
 
 - name: Add autossh connection to the prometheus host
   import_tasks: _autossh.yml

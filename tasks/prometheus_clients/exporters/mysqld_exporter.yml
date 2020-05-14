@@ -1,0 +1,125 @@
+# vim: set ft=ansible:
+---
+- name: Exporters | Start docker postgres exporter container
+  docker_service:
+    state: present
+    project_name: prometheus_mysqld_exporter
+    definition:
+      version: '2'
+      services:
+        mysqld_exporter:
+          image: "{{ prometheus_client.exporters.mysqld_exporter.docker_image }}:{{ prometheus_client.exporters.mysqld_exporter.version }}"
+          container_name: "{{ prometheus_client.exporters.mysqld_exporter.container_name }}"
+          ports:
+            - "127.0.0.1:{{ prometheus_client.exporters.mysqld_exporter.host_port }}:{{ prometheus_client.exporters.mysqld_exporter.host_port }}"
+          hostname: "{{ ansible_host }}"
+          restart: always
+          labels: "{{ prometheus_client.exporters.mysqld_exporter.docker_labels }}"
+          environment:
+            - DATA_SOURCE_NAME={{ prometheus_client.exporters.mysqld_exporter.data_source_name }}
+          network_mode: host
+  when: prometheus_client.exporters.mysqld_exporter.dockerized
+
+- name: Exporters | Mysqld exporter | Ensure mysqld exporter user
+  user:
+    name: "{{ prometheus_client.exporters.mysqld_exporter.username }}"
+    shell: /bin/false
+  when: prometheus_client.exporters.mysqld_exporter.create_user
+
+- name: Exporters | Mysqld exporter | Ensure configuration directory
+  become: yes
+  become_user: root
+  file:
+    path: "{{ prometheus_client.exporters.mysqld_exporter.config_dir }}/sources/"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: Exporters | Mysqld exporter | Get mysqld exporter
+  become: yes
+  become_user: root
+  get_url:
+    # https://github.com/prometheus/mysqld_exporter/releases/download/v0.12.1/mysqld_exporter-0.12.1.linux-amd64.tar.gz
+    url: "https://github.com/prometheus/mysqld_exporter/releases/download/v{{ prometheus_client.exporters.mysqld_exporter.version }}/mysqld_exporter-{{ prometheus_client.exporters.mysqld_exporter.version }}.{{ prometheus_client.exporters.mysqld_exporter.arch }}.tar.gz"
+    dest: "{{ prometheus_client.exporters.mysqld_exporter.config_dir }}/sources/mysqld_exporter-{{ prometheus_client.exporters.mysqld_exporter.version }}.{{ prometheus_client.exporters.mysqld_exporter.arch }}.tar.gz"
+    mode: 0644
+    owner: root
+    group: root
+  when: not prometheus_client.exporters.mysqld_exporter.dockerized
+
+- name: Exporters | Mysqld exporter | Unzip mysqld exporter
+  become: yes
+  become_user: root
+  unarchive:
+    remote_src: yes
+    src: "{{ prometheus_client.exporters.mysqld_exporter.config_dir }}/sources/mysqld_exporter-{{ prometheus_client.exporters.mysqld_exporter.version }}.{{ prometheus_client.exporters.mysqld_exporter.arch }}.tar.gz"
+    dest: "{{ prometheus_client.exporters.mysqld_exporter.config_dir }}/sources/"
+    creates: "{{ prometheus_client.exporters.mysqld_exporter.config_dir }}/sources/mysqld_exporter-{{ prometheus_client.exporters.mysqld_exporter.version }}.{{ prometheus_client.exporters.mysqld_exporter.arch }}/mysqld_exporter"
+  when: not prometheus_client.exporters.mysqld_exporter.dockerized
+
+- name: Exporters | Mysqld exporter | Copy exporter to PATH
+  become: yes
+  become_user: root
+  copy:
+    remote_src: yes
+    src: "{{ prometheus_client.exporters.mysqld_exporter.config_dir }}/sources/mysqld_exporter-{{ prometheus_client.exporters.mysqld_exporter.version }}.{{ prometheus_client.exporters.mysqld_exporter.arch }}/mysqld_exporter"
+    dest: /usr/local/bin/mysqld_exporter
+    mode: 0755
+    owner: root
+    group: root
+  notify:
+    - Restart mysqld exporter
+  when: not prometheus_client.exporters.mysqld_exporter.dockerized
+
+- name: Exporters | Mysqld exporter | Ensure mysqld exporter systemd unit
+  become: yes
+  become_user: root
+  template:
+    src: mysqld_exporter/systemd.service
+    dest: "/etc/systemd/system/mysqld-exporter.service"
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - Restart mysqld exporter
+  when: not prometheus_client.exporters.mysqld_exporter.dockerized
+
+- name: Exporters | Mysqld exporter | Ensure mysqld exporter env vars file
+  become: yes
+  become_user: root
+  template:
+    src: mysqld_exporter/envvars
+    dest: "{{ prometheus_client.exporters.mysqld_exporter.config_dir }}/envvars"
+    owner: root
+    group: "{{ prometheus_client.exporters.mysqld_exporter.username }}"
+    mode: 0640
+  notify:
+    - Restart mysqld exporter
+  when: not prometheus_client.exporters.mysqld_exporter.dockerized
+
+- name: Exporters | Mysqld exporter | Enable systemd service
+  become: yes
+  become_user: root
+  systemd:
+    name: "mysqld-exporter.service"
+    enabled: yes
+    daemon_reload: yes
+    state: started
+  when: not prometheus_client.exporters.mysqld_exporter.dockerized
+
+- name: Add autossh connection to the prometheus host
+  import_tasks: _autossh.yml
+  vars:
+    service_name: "mysqld_exporter"
+    exporter_name: "Postgres Exporter"
+    local_port: "{{ prometheus_client.exporters.mysqld_exporter.host_port }}"
+    connect_username: prometheus_client
+    connect_port: "{{ prometheus_client.exporters_autossh_to_prometheus.master_ssh_port }}"
+  when: prometheus_client.exporters_autossh_to_prometheus.enabled
+  tags:
+    - autossh
+    - prometheus_clients
+    - exporters
+    - server_config
+    - prometheus_config

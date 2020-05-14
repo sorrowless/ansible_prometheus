@@ -1,0 +1,2 @@
+PG_EXPORTER_AUTO_DISCOVER_DATABASES=true
+DATA_SOURCE_NAME={{ prometheus_client.exporters.postgres_exporter.data_source_name }}

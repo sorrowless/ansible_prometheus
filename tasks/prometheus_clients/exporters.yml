@@ -43,6 +43,14 @@
     - postgres_exporter
     - prometheus_config
 
+- name: Exporters | Include MySQL exporter
+  import_tasks: exporters/mysqld_exporter.yml
+  when: prometheus_client.exporters.mysqld_exporter.enabled
+  tags:
+    - server_config
+    - mysqld_exporter
+    - prometheus_config
+
 - name: Exporters | Initialize host job config
   set_fact:
     job_config:

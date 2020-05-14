@@ -1,0 +1,16 @@
+[Unit]
+Description=Postgres exporter service
+After=network.target
+
+[Service]
+User=postgres
+Group=postgres
+EnvironmentFile={{ prometheus_client.exporters.postgres_exporter.config_dir }}/envvars
+ExecStart=/usr/local/bin/postgres_exporter
+ExecStop=/bin/kill -s TERM $MAINPID
+PrivateTmp=true
+Restart=on-failure
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=multi-user.target

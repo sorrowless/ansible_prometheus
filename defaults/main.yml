@@ -170,9 +170,12 @@ prometheus_clients_data:
               port: 9144
     postgres_exporter:
       enabled: false
+      dockerized: false
       container_name: postgres_exporter
+      config_dir: /var/lib/postgres_exporter
       docker_image: "wrouesnel/postgres_exporter"
       version: v0.8.0
+      arch: linux-amd64
       host_port: 9187  # Used for reverse proxy also
       metrics_path: metrics
       docker_labels:
@@ -180,6 +183,23 @@ prometheus_clients_data:
         - exporter
         - postgres_exporter
       data_source_name: "postgresql://postgres:postgres@127.0.0.1:5432?sslmode=disable"
+    mysqld_exporter:
+      enabled: false
+      dockerized: false
+      container_name: myslqd_exporter
+      config_dir: /var/lib/mysqld_exporter
+      docker_image: "prom/mysqld-exporter"
+      create_user: false
+      username: mysql
+      version: 0.12.1
+      arch: linux-amd64
+      host_port: 9104  # Used for reverse proxy also
+      metrics_path: metrics
+      docker_labels:
+        - prometheus
+        - exporter
+        - mysqld_exporter
+      data_source_name: "mysql:mysql@(127.0.0.1:3306)/"
     blackbox_exporter:
       enabled: false
       container_name: blackbox_exporter
