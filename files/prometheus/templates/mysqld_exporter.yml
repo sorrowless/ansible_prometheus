@@ -2,6 +2,15 @@
 groups:
   - name: Mysqld.rules
     rules:
+    - alert: ExporterDown
+      expr: up{scrape_type="mysqld_exporter"} == 0
+      for: 10s
+      labels:
+        severity: critical
+      annotations:
+        summary: "{{ $labels.node_name }} mysqld exporter is down."
+        summary_resolved: "{{ $labels.node_name }} mysqld exporter is up."
+        description: "Returned value is {{ .Value }} for {{ $labels.node_name }} mysqld exporter."
     - alert: MysqlDown
       expr: mysql_up == 0
       for: 5m

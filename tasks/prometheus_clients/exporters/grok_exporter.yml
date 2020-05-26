@@ -68,7 +68,7 @@
     dest: "{{ prometheus_client.exporters.grok_exporter.config_dir }}/{{ item.name }}.yml"
     owner: root
     group: root
-    mode: 0755
+    mode: 0644
   with_items: "{{ prometheus_client.exporters.grok_exporter.exporters }}"
 
 - name: Exporters | Grok exporter | Ensure grok exporter systemd unit
@@ -77,7 +77,7 @@
     dest: "/etc/systemd/system/grok-exporter-{{ item.name }}.service"
     owner: root
     group: root
-    mode: 0755
+    mode: 0644
   with_items: "{{ prometheus_client.exporters.grok_exporter.exporters }}"
 
 # TODO(sbog): rework this to restart only changed services

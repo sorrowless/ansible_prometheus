@@ -1,0 +1,31 @@
+---
+groups:
+- name: grok.rules
+  rules:
+  - alert: ExporterDown
+    expr: up{scrape_type=~"grok_exporter.*"} == 0
+    for: 10s
+    labels:
+      severity: critical
+    annotations:
+      summary: "{{ $labels.node_name }} grok exporter is down."
+      summary_resolved: "{{ $labels.node_name }} grok exporter is up."
+      description: "Returned value is {{ .Value }} for {{ $labels.node_name }} grok exporter."
+  - alert: NginxServerErrorsIncreased
+    expr: increase(nginx_access{status_code=~"5.*"}[1m]) > 10
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "There are more than 10 5xx server responses in nginx log on ({{ $labels.node_name }})"
+      summary_resolved: "No errors in nginx log on {{ $labels.node_name }}"
+      description: "Nginx server on {{ $labels.node_name }} has some errors\n LABELS: {{ $labels }}"
+  - alert: NginxServerErrorsCritical
+    expr: increase(nginx_access{status_code=~"5.*"}[1m]) > 50
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "There are more than 50 5xx server responses in nginx log on ({{ $labels.node_name }})"
+      summary_resolved: "No errors in nginx log on {{ $labels.node_name }}"
+      description: "Nginx server on {{ $labels.node_name }} has some errors\n LABELS: {{ $labels }}"

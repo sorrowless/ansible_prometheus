@@ -2,7 +2,7 @@
 try:
     import cfscrape
 except ModuleNotFoundError:
-    print({"local_blocknumber": -1, "ethscan_blocknumber": -1})
+    print(json.dumps({"local_blocknumber": -1, "ethscan_blocknumber": -100}))
     exit(0)
 import json
 import requests
@@ -41,4 +41,4 @@ rez = scraper.get(ethscan_url).content
 
 ethscan_bnum = int(json.loads(rez.decode('utf-8'))['result'], 16)
 
-print({"local_blocknumber": local_bnum, "ethscan_blocknumber": ethscan_bnum})
+print(json.dumps({"local_blocknumber": local_bnum, "ethscan_blocknumber": ethscan_bnum}))

@@ -202,9 +202,14 @@ prometheus_clients_data:
       data_source_name: "mysql:mysql@(127.0.0.1:3306)/"
     blackbox_exporter:
       enabled: false
+      dockerized: false
+      create_user: true
+      username: blackbox
       container_name: blackbox_exporter
+      config_dir: /var/lib/blackbox
       docker_image: "prom/blackbox-exporter"
-      version: v0.16.0
+      version: 0.16.0
+      arch: linux-amd64
       host_port: 9115  # Used for reverse proxy also
       metrics_path: probe
       docker_labels:
@@ -259,3 +264,19 @@ prometheus_clients_data:
       #    script_params: "test"
       #    data_format: json
       #    name_override: "test_metric"
+    domain_exporter:
+      enabled: false
+      # dockerized: false  # Can be run only in docker
+      container_name: domain_exporter
+      docker_image: "caarlos0/domain_exporter"
+      version: v1.7.2
+      host_port: 9222  # Used for reverse proxy also
+      config_dir: /var/lib/domain_exporter
+      arch: linux-amd64
+      metrics_path: probe
+      docker_labels:
+        - prometheus
+        - exporter
+        - domain_exporter
+      domains:
+        - google.ru

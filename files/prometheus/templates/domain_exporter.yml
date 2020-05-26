@@ -1,0 +1,31 @@
+---
+groups:
+- name: domain.rules
+  rules:
+  - alert: ExporterDown
+    expr: up{scrape_type="domain_exporter"} == 0
+    for: 10s
+    labels:
+      severity: critical
+    annotations:
+      summary: "{{ $labels.node_name }} domain exporter is down."
+      summary_resolved: "{{ $labels.node_name }} domain exporter is up."
+      description: "Returned value is {{ .Value }} for {{ $labels.node_name }} domain exporter."
+  - alert: DomainExpiring
+    expr: 0 < domain_expiry_days < 28
+    for: 1h
+    labels:
+      severity: warning
+    annotations:
+      description: 'Domain {{ $labels.domain }} will expire in less than 30 days'
+      summary_resolved: "{{ $labels.domain }} is not expiring anymore."
+      summary: '{{ $labels.domain }}: domain is expiring'
+  - alert: DomainExpiring
+    expr: 0 < domain_expiry_days < 5
+    for: 1h
+    labels:
+      severity: critical
+    annotations:
+      description: 'Domain {{ $labels.domain }} will expire in less than 5 days'
+      summary_resolved: "{{ $labels.domain }} is not expiring anymore."
+      summary: '{{ $labels.domain }}: domain is expiring'

@@ -1,0 +1,53 @@
+# vim: set ft=ansible:
+---
+- name: Exporters | Ensure domain config directory
+  file:
+    path: /var/lib/domain_exporter
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: Exporters | Start docker domain exporter container
+  docker_service:
+    state: present
+    project_name: prometheus_domain_exporter
+    definition:
+      version: '2'
+      services:
+        domain_exporter:
+          image: "{{ prometheus_client.exporters.domain_exporter.docker_image }}:{{ prometheus_client.exporters.domain_exporter.version }}"
+          container_name: "{{ prometheus_client.exporters.domain_exporter.container_name }}"
+          ports:
+            - "127.0.0.1:{{ prometheus_client.exporters.domain_exporter.host_port }}:{{ prometheus_client.exporters.domain_exporter.host_port }}"
+          hostname: "{{ ansible_host }}"
+          restart: always
+          labels: "{{ prometheus_client.exporters.domain_exporter.docker_labels }}"
+          network_mode: host
+
+- name: Add autossh connection to the prometheus host
+  import_tasks: _autossh.yml
+  vars:
+    service_name: "domain_exporter"
+    exporter_name: "Domain Exporter"
+    local_port: "{{ prometheus_client.exporters.domain_exporter.host_port }}"
+    connect_username: prometheus_client
+    connect_port: "{{ prometheus_client.exporters_autossh_to_prometheus.master_ssh_port }}"
+    do_not_add_config: true
+  when: prometheus_client.exporters_autossh_to_prometheus.enabled
+  tags:
+    - autossh
+    - prometheus_clients
+    - exporters
+    - server_config
+    - prometheus_config
+
+- name: Create scrape config var for domain exporter
+  import_tasks: domain_exporter_job.yml
+  tags:
+    - prometheus_clients
+    - exporters
+    - domain_exporter
+    - server_config
+    - prometheus_config
+

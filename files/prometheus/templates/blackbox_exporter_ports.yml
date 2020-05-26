@@ -1,0 +1,30 @@
+---
+groups:
+  - name: Ports.rules
+    rules:
+    - alert: ExporterDown
+      expr: up{scrape_type="blackbox_exporter"} == 0
+      for: 10s
+      labels:
+        severity: critical
+      annotations:
+        summary: "{{ $labels.node_name }} blackbox exporter is down."
+        summary_resolved: "{{ $labels.node_name }} blackbox exporter is up."
+        description: "Returned value is {{ .Value }} for {{ $labels.node_name }} blackbox exporter."
+    - alert: PortIsOpen
+      expr: probe_success{job=~'.*_closed'} > 0
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "{{ $labels.node_name }} ({{ $labels.dns_hostname }}) has a port open on instance {{ $labels.instance }} but it should be closed"
+        description: "{{ $labels.instance }} port check return value: {{ $value }}s). Services may be degraded - please take action"
+
+    - alert: PortIsClosed
+      expr: probe_success{job=~'.*_opened'} < 1
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "{{ $labels.node_name }} ({{ $labels.dns_hostname }}) has a port closed on instance {{ $labels.instance }} but it should be opened"
+        description: "{{ $labels.instance }} port check return value: {{ $value }}s). Services may be degraded - please take action"

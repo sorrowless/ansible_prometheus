@@ -1,17 +1,20 @@
 # vim: set ft=ansible:
 ---
-- name: Exporters | Ensure blackbox config directory
+- name: Exporters | Ensure blackbox config directories
   file:
-    path: /var/lib/blackbox
+    path: "{{ item }}"
     state: directory
     owner: root
     group: root
     mode: 0755
+  with_items:
+    - "{{ prometheus_client.exporters.blackbox_exporter.config_dir }}"
+    - "{{ prometheus_client.exporters.blackbox_exporter.config_dir }}/sources"
 
 - name: Exporters | Copy blackbox config file
   template:
     src: blackbox_exporter/config.yml
-    dest: /var/lib/blackbox/config.yml
+    dest: "{{ prometheus_client.exporters.blackbox_exporter.config_dir }}/config.yml"
     mode: 0644
     owner: root
     group: root
@@ -24,7 +27,7 @@
       version: '2'
       services:
         blackbox_exporter:
-          image: "{{ prometheus_client.exporters.blackbox_exporter.docker_image }}:{{ prometheus_client.exporters.blackbox_exporter.version }}"
+          image: "{{ prometheus_client.exporters.blackbox_exporter.docker_image }}:v{{ prometheus_client.exporters.blackbox_exporter.version }}"
           command: "--config.file=/config/config.yml"
           container_name: "{{ prometheus_client.exporters.blackbox_exporter.container_name }}"
           ports:
@@ -35,6 +38,73 @@
           restart: always
           labels: "{{ prometheus_client.exporters.blackbox_exporter.docker_labels }}"
           network_mode: host
+  when: prometheus_client.exporters.blackbox_exporter.dockerized
+
+- name: Exporters | blackbox exporter | Get blackbox exporter
+  become: yes
+  become_user: root
+  get_url:
+    # https://github.com/prometheus/blackbox_exporter/releases/download/v0.16.0/blackbox_exporter-0.16.0.linux-amd64.tar.gz
+    url: "https://github.com/prometheus/blackbox_exporter/releases/download/v{{ prometheus_client.exporters.blackbox_exporter.version }}/blackbox_exporter-{{ prometheus_client.exporters.blackbox_exporter.version }}.{{ prometheus_client.exporters.blackbox_exporter.arch }}.tar.gz"
+    dest: "{{ prometheus_client.exporters.blackbox_exporter.config_dir }}/sources/blackbox_exporter-{{ prometheus_client.exporters.blackbox_exporter.version }}.{{ prometheus_client.exporters.blackbox_exporter.arch }}.tar.gz"
+    mode: 0644
+    owner: root
+    group: root
+  when: not prometheus_client.exporters.blackbox_exporter.dockerized
+
+- name: Exporters | blackbox exporter | Unzip blackbox exporter
+  become: yes
+  become_user: root
+  unarchive:
+    remote_src: yes
+    src: "{{ prometheus_client.exporters.blackbox_exporter.config_dir }}/sources/blackbox_exporter-{{ prometheus_client.exporters.blackbox_exporter.version }}.{{ prometheus_client.exporters.blackbox_exporter.arch }}.tar.gz"
+    dest: "{{ prometheus_client.exporters.blackbox_exporter.config_dir }}/sources/"
+    creates: "{{ prometheus_client.exporters.blackbox_exporter.config_dir }}/sources/blackbox_exporter-{{ prometheus_client.exporters.blackbox_exporter.version }}.{{ prometheus_client.exporters.blackbox_exporter.arch }}/blackbox_exporter"
+  when: not prometheus_client.exporters.blackbox_exporter.dockerized
+
+- name: Exporters | blackbox exporter | Copy exporter to PATH
+  become: yes
+  become_user: root
+  copy:
+    remote_src: yes
+    src: "{{ prometheus_client.exporters.blackbox_exporter.config_dir }}/sources/blackbox_exporter-{{ prometheus_client.exporters.blackbox_exporter.version }}.{{ prometheus_client.exporters.blackbox_exporter.arch }}/blackbox_exporter"
+    dest: /usr/local/bin/blackbox_exporter
+    mode: 0755
+    owner: root
+    group: root
+  notify:
+    - Restart blackbox exporter
+  when: not prometheus_client.exporters.blackbox_exporter.dockerized
+
+- name: Exporters | blackbox exporter | Create blackbox exporter user
+  user:
+    name: "{{ prometheus_client.exporters.blackbox_exporter.username }}"
+    comment: "blackbox exporter user"
+    shell: /usr/sbin/nologin
+  when: prometheus_client.exporters.blackbox_exporter.create_user
+
+- name: Exporters | blackbox exporter | Ensure blackbox exporter systemd unit
+  become: yes
+  become_user: root
+  template:
+    src: blackbox_exporter/systemd.service
+    dest: "/etc/systemd/system/blackbox-exporter.service"
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - Restart blackbox exporter
+  when: not prometheus_client.exporters.blackbox_exporter.dockerized
+
+- name: Exporters | blackbox exporter | Enable systemd service
+  become: yes
+  become_user: root
+  systemd:
+    name: "blackbox-exporter.service"
+    enabled: yes
+    daemon_reload: yes
+    state: started
+  when: not prometheus_client.exporters.blackbox_exporter.dockerized
 
 - name: Add autossh connection to the prometheus host
   import_tasks: _autossh.yml

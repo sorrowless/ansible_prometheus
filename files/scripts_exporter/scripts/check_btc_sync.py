@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import json
 import requests
 import sys
 
@@ -36,4 +37,5 @@ try:
 except:
     remote_bnum = -1
 
-print({"local_blocknumber": local_bnum, "remote_blocknumber": remote_bnum})
+print(json.dumps(
+    {"local_blocknumber": local_bnum, "remote_blocknumber": remote_bnum}))

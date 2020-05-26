@@ -1,0 +1,36 @@
+---
+- name: Create scrape config var for domain exporter
+  set_fact:
+    domain_job_config:
+      job_name: "{{ ansible_host }}_domain_exporter"
+      honor_labels: false
+      metrics_path: "/{{ prometheus_client.exporters.domain_exporter.metrics_path }}"
+      relabel_configs:
+        - source_labels: [__address__]
+          target_label: __param_target
+        - source_labels: [__param_target]
+          target_label: instance
+        - target_label: __address__
+          replacement: "127.0.0.1:{{ autossh_port_number }}"
+      static_configs:
+        - targets: "{{ prometheus_client.exporters.domain_exporter.domains }}"
+          labels:
+            scrape_type: "domain_exporter"
+            node_name: "{{ ansible_host }}"
+  tags:
+    - prometheus_clients
+    - exporters
+    - domain_exporter
+    - server_config
+    - prometheus_config
+
+- name: Add scrape config var for domain exporter to the jobs list
+  set_fact:
+    domain_jobs_config: "{{ domain_jobs_config|default([]) + [ domain_job_config ] }}"
+  tags:
+    - prometheus_clients
+    - exporters
+    - domain_exporter
+    - server_config
+    - prometheus_config
+

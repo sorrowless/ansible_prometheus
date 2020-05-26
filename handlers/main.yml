@@ -33,3 +33,8 @@
   service:
     name: mysqld-exporter.service
     state: restarted
+
+- name: Restart blackbox exporter
+  service:
+    name: blackbox-exporter.service
+    state: restarted

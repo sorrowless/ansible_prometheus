@@ -79,3 +79,19 @@
   tags:
     - server_config
     - prometheus_config
+
+- name: Exporters | Include domain exporter
+  import_tasks: exporters/domain_exporter.yml
+  when: prometheus_client.exporters.domain_exporter.enabled
+  tags:
+    - server_config
+    - domain_exporter
+    - prometheus_config
+
+- name: Exporters | Add domain exporter config to the main host job config
+  set_fact:
+    job_config: "{{ [ job_config ] + [ domain_jobs_config ] | flatten }}"
+  when: prometheus_client.exporters.domain_exporter.enabled
+  tags:
+    - server_config
+    - prometheus_config

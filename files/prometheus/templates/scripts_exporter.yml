@@ -1,0 +1,31 @@
+---
+groups:
+- name: scripts.rules
+  rules:
+  - alert: ExporterDown
+    expr: up{scrape_type="scripts_exporter"} == 0
+    for: 10s
+    labels:
+      severity: critical
+    annotations:
+      summary: "{{ $labels.node_name }} scripts exporter is down."
+      summary_resolved: "{{ $labels.node_name }} scripts exporter is up."
+      description: "Returned value is {{ .Value }} for {{ $labels.node_name }} scripts exporter."
+  - alert: BtcOutOfSync
+    expr: check_btc_sync_remote_blocknumber - check_btc_sync_local_blocknumber > 10
+    for: 30m
+    labels:
+      severity: warning
+    annotations:
+      summary: "BTC node is out of sync ({{ $labels.node_name }}) for more than 10 blocks"
+      summary_resolved: "BTC node {{ $labels.node_name }} is fully synced"
+      description: "BTC Node {{ $labels.node_name }} is out of sync\n LABELS: {{ $labels }}"
+  - alert: BtcParserIsFailed
+    expr: check_btc_parser_parser_check_failed > 0
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "BTC parser on node {{ $labels.node_name }} went to failed state"
+      summary_resolved: "BTC parser on node {{ $labels.node_name }} is now in working state"
+      description: "BTC Node {{ $labels.node_name }} parser check. \n LABELS: {{ $labels }}"

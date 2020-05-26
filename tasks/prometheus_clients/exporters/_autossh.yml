@@ -41,13 +41,18 @@
     name: "autossh-{{ service_name }}.service"
     state: started
 
+- name: Get DNS host name
+  set_fact:
+    dns_hostname: "{{ server_common_host.dns_hostname | default('') }}"
+
 - name: Create scrape config var for exporter
   set_fact:
     exporter_config:
         targets: ["127.0.0.1:{{ autossh_port_number }}"]
         labels: {
           "scrape_type": "{{ service_name }}",
-          "node_name": "{{ ansible_host }}"
+          "node_name": "{{ ansible_host }}",
+          "dns_hostname": "{{ dns_hostname }}"
           }
   tags:
     - server_config

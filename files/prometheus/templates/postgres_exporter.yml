@@ -2,6 +2,15 @@
 groups:
   - name: PostgreSQL.rules
     rules:
+    - alert: ExporterDown
+      expr: up{scrape_type="postgres_exporter"} == 0
+      for: 10s
+      labels:
+        severity: critical
+      annotations:
+        summary: "{{ $labels.node_name }} postgres exporter is down."
+        summary_resolved: "{{ $labels.node_name }} postgres exporter is up."
+        description: "Returned value is {{ .Value }} for {{ $labels.node_name }} postgres exporter."
     - alert: PostgreSQLMaxConnectionsReached
       expr: sum(pg_stat_activity_count) by (instance) > sum(pg_settings_max_connections) by (instance)
       for: 1m

@@ -1,0 +1,15 @@
+[Unit]
+Description=Blackbox exporter service
+After=network.target
+
+[Service]
+User={{ prometheus_client.exporters.blackbox_exporter.username }}
+Group={{ prometheus_client.exporters.blackbox_exporter.username }}
+ExecStart=/usr/local/bin/blackbox_exporter --config.file={{ prometheus_client.exporters.blackbox_exporter.config_dir }}/config.yml
+ExecStop=/bin/kill -s TERM $MAINPID
+PrivateTmp=true
+Restart=on-failure
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=multi-user.target
