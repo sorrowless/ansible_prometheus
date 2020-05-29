@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Environment="AUTOSSH_GATETIME=0"
-ExecStart=/usr/bin/autossh -M 0 -o "ServerAliveInterval 15" -o "ServerAliveCountMax 2" -2NR {{ server_listen | default("127.0.0.1") }}:{{ autossh_port_number }}:{{ local_listen | default("127.0.0.1") }}:{{ local_port }} {{ connect_username }}@{{ connect_hostname | default(first_prometheus_master) }} -p {{ connect_port | default(22) }}
+ExecStart=/usr/bin/autossh -M 0 -o "ExitOnForwardFailure yes" -o "ServerAliveInterval 15" -o "ServerAliveCountMax 2" -2NR {{ server_listen | default("127.0.0.1") }}:{{ autossh_port_number }}:{{ local_listen | default("127.0.0.1") }}:{{ local_port }} {{ connect_username }}@{{ connect_hostname | default(first_prometheus_master) }} -p {{ connect_port | default(22) }}
 
 [Install]
 WantedBy=multi-user.target
