@@ -63,6 +63,16 @@
           external:
             name: "{{ prometheus.docker.network_name }}"
   when: prometheus.docker.network_name != "host"
+  tags:
+    - restart_prometheus_server
+
+- name: Set prom_config var only for prometheus explicit restart
+  set_fact:
+    prom_config:
+      changed: yes
+  tags:
+    - never
+    - restart_prometheus_server
 
 - name: Prometheus | Start docker prometheus container
   docker_service:
@@ -85,3 +95,5 @@
           network_mode: host
   when: prometheus.docker.network_name == "host"
   failed_when: false
+  tags:
+    - restart_prometheus_server

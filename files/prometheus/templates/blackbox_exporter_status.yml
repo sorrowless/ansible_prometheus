@@ -1,0 +1,12 @@
+---
+groups:
+  - name: HTTPStatus.rules
+    rules:
+    - alert: WrongHTTPStatus
+      expr: probe_http_status_code >= 500 or probe_http_status_code < 200
+      for: 30s
+      labels:
+        severity: critical
+      annotations:
+        summary: "{{ $labels.instance }} returns wrong HTTP code ({{ $value }})"
+        description: "{{ $labels.instance }} returns wrong HTTP code: {{ $value }}). Services may be degraded - please take action"
