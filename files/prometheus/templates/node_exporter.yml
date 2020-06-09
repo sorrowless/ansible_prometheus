@@ -102,14 +102,14 @@ groups:
       summary_resolved: "CPU load is okay on {{ $labels.node_name }}"
       description: "CPU load (15m) is high on {{ $labels.node_name }}\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
   - alert: ContextSwitching
-    expr: rate(node_context_switches_total[5m]) > 40000
+    expr: rate(node_context_switches_total[5m]) > 60000
     for: 30m
     labels:
       severity: warning
     annotations:
-      summary: "Context switching is too high (> 40000 / s) on {{ $labels.node_name }}"
+      summary: "Context switching is too high (> 60000 / s) on {{ $labels.node_name }}"
       summary_resolved: "Context switching is okay on {{ $labels.node_name }}"
-      description: "Context switching is growing on node (> 40000 / s) on {{ $labels.node_name }}\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      description: "Context switching is growing on node (> 60000 / s) on {{ $labels.node_name }}\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
   - alert: HostRebooted
     expr: (time() - node_boot_time_seconds) < 180
     for: 1m
