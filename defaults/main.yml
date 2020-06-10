@@ -160,7 +160,7 @@ prometheus_clients_data:
               additional_patterns: []
             metrics:
               - type: counter
-                name: nginx_access_5xx
+                name: nginx_access
                 help: Total number of 5xx errors in according access log
                 match: '%{NGINX_ACCESS}'
                 labels:
