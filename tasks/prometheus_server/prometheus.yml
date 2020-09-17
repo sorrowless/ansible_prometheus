@@ -58,6 +58,13 @@
           hostname: "{{ prometheus.prometheus.container_name }}"
           restart: always
           labels: "{{ prometheus.prometheus.docker_labels }}"
+          command:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.path=/prometheus"
+            - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+            - "--web.console.templates=/usr/share/prometheus/consoles"
+            - "--web.enable-admin-api"
+            - "--storage.tsdb.retention.time=7d"
       networks:
         default:
           external:
@@ -92,6 +99,13 @@
           hostname: "{{ prometheus.prometheus.container_name }}"
           restart: always
           labels: "{{ prometheus.prometheus.docker_labels }}"
+          command:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.path=/prometheus"
+            - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+            - "--web.console.templates=/usr/share/prometheus/consoles"
+            - "--web.enable-admin-api"
+            - "--storage.tsdb.retention.time=7d"
           network_mode: host
   when: prometheus.docker.network_name == "host"
   failed_when: false
