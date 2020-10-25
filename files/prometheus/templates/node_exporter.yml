@@ -21,7 +21,7 @@ groups:
       summary_resolved: "Memory usage is under 95% on {{ $labels.node_name }}"
       description: "Node {{ $labels.node_name }} memory is filling up (< 10% left)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
   - alert: UnusualNetworkThroughputIn
-    expr: sum by (instance) (irate(node_network_receive_bytes_total[2m])) / 1024 / 1024 > 100
+    expr: sum by (instance,dns_hostname,node_name) (irate(node_network_receive_bytes_total[2m])) / 1024 / 1024 > 100
     for: 30m
     labels:
       severity: warning
@@ -30,7 +30,7 @@ groups:
       summary_resolved: "Network activity is under 100mbit/s on {{ $labels.node_name }}"
       description: "Host network interfaces on {{ $labels.node_name }} are probably receiving too much data (> 100 MB/s)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
   - alert: UnusualNetworkThroughputOut
-    expr: sum by (instance) (irate(node_network_transmit_bytes_total[2m])) / 1024 / 1024 > 100
+    expr: sum by (instance,dns_hostname,node_name) (irate(node_network_transmit_bytes_total[2m])) / 1024 / 1024 > 100
     for: 30m
     labels:
       severity: warning
@@ -39,7 +39,7 @@ groups:
       summary_resolved: "Network activity is under 100mbit/s on {{ $labels.node_name }}"
       description: "Host network interfaces on {{ $labels.node_name }} are probably sending too much data (> 100 MB/s)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
   - alert: UnusualDiskReadRate
-    expr: sum by (instance) (irate(node_disk_read_bytes_total[2m])) / 1024 / 1024 > 50
+    expr: sum by (instance,dns_hostname,node_name) (irate(node_disk_read_bytes_total[2m])) / 1024 / 1024 > 50
     for: 30m
     labels:
       severity: warning
@@ -48,7 +48,7 @@ groups:
       summary_resolved: "Disk read rate is under 50mbit/s on {{ $labels.node_name }}"
       description: "Disk is probably reading too much data (> 50 MB/s) on {{ $labels.node_name }}\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
   - alert: UnusualDiskWriteRate
-    expr: sum by (instance) (irate(node_disk_written_bytes_total[2m])) / 1024 / 1024 > 50
+    expr: sum by (instance,dns_hostname,node_name) (irate(node_disk_written_bytes_total[2m])) / 1024 / 1024 > 50
     for: 30m
     labels:
       severity: warning
