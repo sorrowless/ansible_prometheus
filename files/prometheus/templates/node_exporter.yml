@@ -57,14 +57,14 @@ groups:
       summary_resolved: "Disk write rate is under 50mbit/s on {{ $labels.node_name }}"
       description: "Disk is probably writing too much data (> 50 MB/s)on {{ $labels.node_name }}\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
   - alert: OutOfDiskSpace
-    expr: node_filesystem_avail_bytes{device!~"tmpfs|lxcfs|cgmfs"} / node_filesystem_size_bytes{device!~"tmpfs|lxcfs|cgmfs"} * 100 < 10
-    for: 30m
+    expr: node_filesystem_avail_bytes{device!~"tmpfs|lxcfs|cgmfs"} / node_filesystem_size_bytes{device!~"tmpfs|lxcfs|cgmfs"} * 100 < 5 AND node_filesystem_avail_bytes{device!~"tmpfs|lxcfs|cgmfs"} / 1024 / 1024 / 1024 < 5
+    for: 10m
     labels:
       severity: warning
     annotations:
-      summary: "Out of disk space (< 10% left) on {{ $labels.node_name }}"
-      summary_resolved: "Disk usage is under 90% on {{ $labels.node_name }}"
-      description: "Disk is almost full (< 10% left) on {{ $labels.node_name }}\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+      summary: "Out of disk space (< 5% and <5Gb left) on {{ $labels.node_name }}"
+      summary_resolved: "Disk usage has more than 5Gb free on {{ $labels.node_name }}"
+      description: "Disk is almost full (< 5% and <5Gb left) on {{ $labels.node_name }}\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
   - alert: OutOfInodes
     expr: node_filesystem_files_free{mountpoint ="/rootfs"} / node_filesystem_files{mountpoint ="/rootfs"} * 100 < 5
     for: 30m
