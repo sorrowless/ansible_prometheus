@@ -1,10 +1,10 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
+import json
 try:
     import cfscrape
 except ModuleNotFoundError:
     print(json.dumps({"local_blocknumber": -1, "ethscan_blocknumber": -100}))
     exit(0)
-import json
 import requests
 import sys
 
