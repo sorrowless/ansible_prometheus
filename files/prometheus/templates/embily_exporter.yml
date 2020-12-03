@@ -1,0 +1,21 @@
+groups:
+- name: embily.rules
+  rules:
+  - alert: EmbilyPartnerPingTime
+    expr: providers_walletto_partner_ping_time <= 0
+    for: 30s
+    labels:
+      severity: warning
+    annotations:
+      summary: "{{ $labels.instance }} partner ping time is {{ .Value }}."
+      summary_resolved: "{{ $labels.instance }} partner ping time is okay."
+      description: "Returned value is {{ .Value }} for {{ $labels.instance }} embily exporter."
+  - alert: EmbilyClientPingTime
+    expr: providers_walletto_client_ping_time <= 0
+    for: 30s
+    labels:
+      severity: warning
+    annotations:
+      summary: "{{ $labels.instance }} client ping time is {{ .Value }}."
+      summary_resolved: "{{ $labels.instance }} client ping time is okay."
+      description: "Returned value is {{ .Value }} for {{ $labels.instance }} embily exporter."
