@@ -3,7 +3,7 @@ groups:
   rules:
   - alert: EmbilyPartnerPingTime
     expr: providers_walletto_partner_ping_time <= 0
-    for: 30s
+    for: 5s
     labels:
       severity: warning
     annotations:
@@ -12,10 +12,19 @@ groups:
       description: "Returned value is {{ .Value }} for {{ $labels.instance }} embily exporter."
   - alert: EmbilyClientPingTime
     expr: providers_walletto_client_ping_time <= 0
-    for: 30s
+    for: 5s
     labels:
       severity: warning
     annotations:
       summary: "{{ $labels.instance }} client ping time is {{ .Value }}."
       summary_resolved: "{{ $labels.instance }} client ping time is okay."
+      description: "Returned value is {{ .Value }} for {{ $labels.instance }} embily exporter."
+  - alert: EmbilySidekiqQueueTooLong
+    expr: sidekiq_queue_default_size > 500 or sidekiq_queue_kyc_size > 500 or sidekiq_queue_scanner_trx_size > 500 or sidekiq_queue_default_retry_size > 500 or sidekiq_queue_kyc_size > 500 or sidekiq_queue_scanner_trx_size > 500
+    for: 5s
+    labels:
+      severity: critical
+    annotations:
+      summary: "{{ $labels.instance }} sidekiq queue size is {{ .Value }}."
+      summary_resolved: "{{ $labels.instance }} queue size is okay ({{ .Value }})."
       description: "Returned value is {{ .Value }} for {{ $labels.instance }} embily exporter."
