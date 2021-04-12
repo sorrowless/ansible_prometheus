@@ -20,7 +20,7 @@ groups:
       summary_resolved: "{{ $labels.instance }} client ping time is okay."
       description: "Returned value is {{ .Value }} for {{ $labels.instance }} embily exporter."
   - alert: EmbilySidekiqQueueTooLong
-    expr: sidekiq_queue_default_size > 500 or sidekiq_queue_kyc_size > 500 or sidekiq_queue_scanner_trx_size > 500 or sidekiq_queue_default_retry_size > 500 or sidekiq_queue_kyc_retry_size > 500 or sidekiq_queue_scanner_trx_retry_size > 500
+    expr: sidekiq_queue_default_size > 1000 or sidekiq_queue_kyc_size > 1000 or sidekiq_queue_scanner_trx_size > 1000 or sidekiq_queue_webhooks_size > 1000 or sidekiq_queue_balances_size > 1000 or sidekiq_queue_transactions_size > 1000 or sidekiq_queue_default_retry_size > 1000 or sidekiq_queue_kyc_retry_size > 1000 or sidekiq_queue_scanner_trx_retry_size > 1000 or sidekiq_queue_webhooks_retry_size > 1000 or sidekiq_queue_balances_retry_size > 1000 or sidekiq_queue_transactions_retry_size > 1000
     for: 5s
     labels:
       severity: critical
