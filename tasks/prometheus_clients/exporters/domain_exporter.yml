@@ -9,7 +9,7 @@
     mode: 0755
 
 - name: Exporters | Start docker domain exporter container
-  docker_service:
+  community.docker.docker_compose:
     state: present
     project_name: prometheus_domain_exporter
     definition:

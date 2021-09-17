@@ -1,6 +1,6 @@
 ---
 - name: Exporters | Start docker node exporter container
-  docker_service:
+  community.docker.docker_compose:
     state: present
     project_name: prometheus_node_exporter
     definition:

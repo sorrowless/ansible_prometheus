@@ -6,7 +6,7 @@
     mode: 0755
 
 - name: Timescale | Start docker Timescale container
-  docker_service:
+  community.docker.docker_compose:
     state: present
     project_name: pg_prometheus
     definition:
@@ -32,7 +32,7 @@
   when: prometheus.docker.network_name != "host"
 
 - name: Timescale | Start docker Timescale container
-  docker_service:
+  community.docker.docker_compose:
     state: present
     project_name: pg_prometheus
     definition:
@@ -55,7 +55,7 @@
   when: prometheus.docker.network_name == "host"
 
 - name: Timescale | Start docker postgres adapter container
-  docker_service:
+  community.docker.docker_compose:
     state: present
     project_name: prometheus_postgresql_adapter
     definition:
@@ -77,7 +77,7 @@
   when: prometheus.docker.network_name != "host"
 
 - name: Timescale | Start docker postgres adapter container
-  docker_service:
+  community.docker.docker_compose:
     state: present
     project_name: prometheus_postgresql_adapter
     definition:

@@ -17,7 +17,7 @@
   register: alert_config
 
 - name: Alertmanager | Start docker alertmanager container
-  docker_service:
+  community.docker.docker_compose:
     state: present
     project_name: alertmanager
     restarted: "{{ 'yes' if alert_config.changed else 'no' }}"
@@ -41,7 +41,7 @@
   when: prometheus.docker.network_name != "host"
 
 - name: Alertmanager | Start docker alertmanager container
-  docker_service:
+  community.docker.docker_compose:
     state: present
     project_name: alertmanager
     restarted: "{{ 'yes' if alert_config.changed else 'no' }}"

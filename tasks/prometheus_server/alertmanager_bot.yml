@@ -20,7 +20,7 @@
   notify: Restart alertmanager bot container
 
 - name: Alertmanager-bot | Start docker alertmanager-bot container
-  docker_service:
+  community.docker.docker_compose:
     state: present
     project_name: alertmanager_bot
     definition:
@@ -52,7 +52,7 @@
   when: prometheus.docker.network_name != "host"
 
 - name: Alertmanager-bot | Start docker alertmanager-bot container
-  docker_service:
+  community.docker.docker_compose:
     state: present
     project_name: alertmanager_bot
     definition:

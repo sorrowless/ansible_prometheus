@@ -1,7 +1,7 @@
 # vim: set ft=ansible:
 ---
 - name: Exporters | Start docker postgres exporter container
-  docker_service:
+  community.docker.docker_compose:
     state: present
     project_name: prometheus_mysqld_exporter
     definition:

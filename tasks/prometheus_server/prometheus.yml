@@ -41,7 +41,7 @@
     - Restart docker prometheus container
 
 - name: Prometheus | Start docker prometheus container
-  docker_service:
+  community.docker.docker_compose:
     state: present
     project_name: prometheus
     restarted: "{{ 'yes' if prom_config.changed else 'no' }}"
@@ -82,7 +82,7 @@
     - restart_prometheus_server
 
 - name: Prometheus | Start docker prometheus container
-  docker_service:
+  community.docker.docker_compose:
     state: present
     project_name: prometheus
     restarted: "{{ 'yes' if prom_config.changed else 'no' }}"

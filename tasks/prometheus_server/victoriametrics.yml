@@ -6,7 +6,7 @@
     mode: 0755
 
 - name: VictoriaMetrics | Start docker VictoriaMetrics container
-  docker_service:
+  community.docker.docker_compose:
     state: present
     project_name: victoriametrics
     definition:
@@ -32,7 +32,7 @@
   when: prometheus.docker.network_name != "host"
 
 - name: VictoriaMetrics | Start docker VictoriaMetrics container
-  docker_service:
+  community.docker.docker_compose:
     state: present
     project_name: victoriametrics
     definition:
